@@ -1,0 +1,56 @@
+{
+  "compilerOptions": {
+    /* Basic Configuration */
+    "target": "es2016", // Use ES2016 for emitted JavaScript
+    "module": "commonjs", // CommonJS for module code
+    "lib": ["dom", "dom.iterable", "esnext"], // Include libraries for browser and modern JavaScript
+    "baseUrl": ".", // Base directory for resolving paths
+    "paths": {
+      "@/*": ["./*"] // Alias for "@/..." to map to project root
+    },
+    "jsx": "preserve", // Preserve JSX syntax in output
+    "esModuleInterop": true, // Support ES module imports in CommonJS
+    "skipLibCheck": true, // Skip type checking for libraries
+    "forceConsistentCasingInFileNames": true, // Enforce case sensitivity in imports
+
+    /* TypeScript Strictness */
+    "strict": true, // Enable strict mode for TypeScript
+    "noImplicitAny": true, // Disallow implicit 'any' types
+    "strictNullChecks": true, // Ensure null/undefined are checked
+    "strictFunctionTypes": true, // Check function compatibility
+    "strictPropertyInitialization": true, // Ensure class properties are initialized
+
+    /* JavaScript Support */
+    "allowJs": true, // Allow JavaScript files in the project
+    "checkJs": false, // Skip type-checking for JavaScript files
+
+    /* Modules */
+    "moduleResolution": "node", // Use Node.js resolution for modules
+    "resolveJsonModule": true, // Allow importing JSON files
+    "isolatedModules": true, // Ensure files can be compiled independently
+
+    /* Emit Configuration */
+    "noEmit": true, // Do not emit output files
+    "incremental": true, // Enable incremental builds for faster compilation
+
+    /* Plugins */
+    "plugins": [
+      {
+        "name": "next" // Enable Next.js-specific TypeScript support
+      }
+    ]
+  },
+  "include": [
+    "next-env.d.ts", // Next.js environment types
+    ".next/types/**/*.ts", // Next.js types
+    "**/*.ts", // All TypeScript files
+    "**/*.tsx", // All TypeScript + JSX files
+    "**/*.js", // Include JavaScript files
+    "**/*.jsx" // Include JavaScript + JSX files
+, "app/(routes)/admin/users/page.jtsx"  ],
+  "exclude": [
+    "node_modules", // Exclude dependencies
+    "dist", // Exclude build output
+    ".next" // Exclude Next.js build directory
+  ]
+}

@@ -1,0 +1,21 @@
+{
+    "name": "OnlineHome Nepal",
+    "short_name": "OnlineHome",
+    "description": "Nepal's trusted real estate platform",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#1f456b",
+    "icons": [
+      {
+        "src": "/metadata/icon-192.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "src": "/metadata/icon-512.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ]
+  }

@@ -1,0 +1,23 @@
+@keyframes gradient-animation {
+  0% {
+    background-position: 200% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animateGradient {
+  background: linear-gradient(90deg, #046d04,#152701);
+  background-size: 200% 100%;
+  animation: gradient-animation .01s linear infinite;
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
