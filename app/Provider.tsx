@@ -1,34 +1,37 @@
-"use client"
-import React, { useState, useEffect } from 'react'
-import Header from './_components/Header'
-import { LoadScript } from '@react-google-maps/api'
-import Footer from './_components/Footer'
-import AuthProvider from '@/components/Provider/AuthProvider'
+"use client";
+
+import React, { useState, useEffect } from "react";
+import Header from "./_components/Header";
+import { LoadScript } from "@react-google-maps/api";
+import Footer from "./_components/Footer";
+import AuthProvider from "@/components/Provider/AuthProvider";
+import { usePathname } from "next/navigation";
 
 function Provider({ children }: any) {
   const [isAdmin, setIsAdmin] = useState(false);
-  const pathname = window.location.pathname!;
-  
+  const [clientPathname, setClientPathname] = useState("");
+
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setIsAdmin(pathname.startsWith('/admin'));
+    // Ensure this only runs client-side
+    if (typeof window !== "undefined") {
+      const path = window.location.pathname;
+      setClientPathname(path);
+      setIsAdmin(path.startsWith("/admin"));
     }
-  }, [pathname]);
+  }, []);
 
   return (
     <AuthProvider>
       <LoadScript
         googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_PLACE_API_KEY!}
-        libraries={['places']}
+        libraries={["places"]}
       >
         {!isAdmin && <Header />}
-        <div className='pt-[0rem]'>
-          {children}
-        </div>
+        <div className="pt-[0rem]">{children}</div>
         {!isAdmin && <Footer />}
       </LoadScript>
     </AuthProvider>
-  )
+  );
 }
 
-export default Provider
+export default Provider;

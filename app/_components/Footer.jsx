@@ -10,8 +10,8 @@ import {
   PlayCircleIcon,
   ChevronRightIcon
 } from "@heroicons/react/24/outline";
-import JobIntern from "/public/assets/images/onFooter.png";
-import Logo from "/public/assets/images/homeLogo.png";
+import JobIntern from "../../public/assets/images/onFooter.png";
+import Logo from "../../public/assets/images/homeLogo.png";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();

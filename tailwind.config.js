@@ -114,6 +114,7 @@ module.exports = {
   	}
   },
   plugins: [
-    require("tailwindcss-animate",heroui())
+    require("tailwindcss-animate"),
+    heroui(),
   ],
 }
