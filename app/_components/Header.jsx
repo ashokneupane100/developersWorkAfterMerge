@@ -110,21 +110,14 @@ const Header = memo(function Header() {
           <Link href="/" prefetch={false}>
             <div className="flex items-center">
               <Image 
-                src="/logo.png" 
+                src="/homeLogo.jpg" 
                 width={32} 
                 height={32} 
                 alt="logo" 
                 priority 
                 className="object-contain" 
               />
-              <div className="ml-2">
-                <h1 className="font-bold text-green-800 text-xl">
-                  onlinehome
-                  <span className="block text-sm text-green-800">
-                  बर्षौं बर्षको बलियो सम्बन्ध
-                  </span>
-                </h1>
-              </div>
+              
             </div>
           </Link>
 

@@ -2,56 +2,108 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { 
-  PhoneIcon, 
-  EnvelopeIcon, 
+import {
+  PhoneIcon,
+  EnvelopeIcon,
   MapPinIcon,
   BriefcaseIcon,
   PlayCircleIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
 } from "@heroicons/react/24/outline";
 import JobIntern from "../../public/assets/images/onFooter.png";
-import Logo from "../../public/assets/images/homeLogo.png";
+import Logo from "../../public/assets/images/homeLogo.jpg";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
-  
+
   return (
     <footer className="bg-gradient-to-b from-green-900 to-green-950 text-white pt-8 mt-0">
       {/* Inline CSS for Custom Animations */}
       <style jsx>{`
         @keyframes fadeSlideUp {
-          0% { opacity: 0; transform: translateY(10px); }
-          100% { opacity: 1; transform: translateY(0); }
+          0% {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
         @keyframes fadeScale {
-          0% { opacity: 0; transform: scale(0.95); }
-          100% { opacity: 1; transform: scale(1); }
+          0% {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
         }
         @keyframes fadeScaleBounce {
-          0% { opacity: 0*; transform: scale(0.8); }
-          60% { opacity: 1; transform: scale(1.05); }
-          100% { opacity: 1; transform: scale(1); }
+          0% {
+            opacity: 0 *;
+            transform: scale(0.8);
+          }
+          60% {
+            opacity: 1;
+            transform: scale(1.05);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
         }
         @keyframes glowPulse {
-          0%, 100% { opacity: 0.2; transform: scale(1); box-shadow: 0 0 10px rgba(251, 191, 36, 0.2); }
-          50% { opacity: 0.5; transform: scale(1.15); box-shadow: 0 0 20px rgba(251, 191, 36, 0.5); }
+          0%,
+          100% {
+            opacity: 0.2;
+            transform: scale(1);
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);
+          }
+          50% {
+            opacity: 0.5;
+            transform: scale(1.15);
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+          }
         }
         @keyframes underlineGrow {
-          0% { transform: scaleX(0); opacity: 0; }
-          100% { transform: scaleX(1); opacity: 1; }
+          0% {
+            transform: scaleX(0);
+            opacity: 0;
+          }
+          100% {
+            transform: scaleX(1);
+            opacity: 1;
+          }
         }
         @keyframes slideInLeft {
-          0% { opacity: 0; transform: translateX(-20px); }
-          100% { opacity: 1; transform: translateX(0); }
+          0% {
+            opacity: 0;
+            transform: translateX(-20px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateX(0);
+          }
         }
         @keyframes slideInRight {
-          0% { opacity: 0; transform: translateX(20px); }
-          100% { opacity: 1; transform: translateX(0); }
+          0% {
+            opacity: 0;
+            transform: translateX(20px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateX(0);
+          }
         }
         @keyframes textShimmer {
-          0% { background-position: 0% 50%; }
-          100% { background-position: 200% 50%; }
+          0% {
+            background-position: 0% 50%;
+          }
+          100% {
+            background-position: 200% 50%;
+          }
         }
       `}</style>
 
@@ -62,7 +114,7 @@ const Footer = () => {
             <Link
               href="/jobs-internships"
               className="group flex items-center bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
-              style={{ animation: 'slideInLeft 0.8s ease-out forwards' }}
+              style={{ animation: "slideInLeft 0.8s ease-out forwards" }}
             >
               <div className="bg-white p-1.5 rounded-full text-amber-600 group-hover:scale-110 transition-transform duration-300">
                 <BriefcaseIcon className="w-5 h-5" />
@@ -75,9 +127,9 @@ const Footer = () => {
             <Link
               href="https://youtube.com/@onlinehome_nepal"
               target="_blank"
-              rel="noopener noreferrer" 
+              rel="noopener noreferrer"
               className="group flex items-center bg-gradient-to-r from-red-500 to-red-600 px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
-              style={{ animation: 'slideInRight 0.8s ease-out forwards' }}
+              style={{ animation: "slideInRight 0.8s ease-out forwards" }}
             >
               <div className="bg-white p-1.5 rounded-full text-red-600 group-hover:scale-110 transition-transform duration-300">
                 <PlayCircleIcon className="w-5 h-5" />
@@ -96,7 +148,7 @@ const Footer = () => {
           {/* Quick Links */}
           <div
             className="bg-green-800/30 rounded-xl p-5 backdrop-blur-sm border border-green-700/30 shadow-md hover:shadow-lg transition-shadow duration-300"
-            style={{ animation: 'fadeSlideUp 0.8s ease-out forwards' }}
+            style={{ animation: "fadeSlideUp 0.8s ease-out forwards" }}
           >
             <h3 className="text-lg font-bold text-amber-400 border-b border-amber-400/30 pb-2 mb-4 flex items-center">
               <span className="bg-amber-400/20 p-1 rounded-md mr-2">
@@ -116,7 +168,11 @@ const Footer = () => {
                   key={name}
                   href={href}
                   className="group flex items-center text-gray-200 hover:text-amber-300 transition-colors duration-300"
-                  style={{ animation: `fadeSlideUp 0.8s ease-out ${0.2 * (index + 1)}s forwards` }}
+                  style={{
+                    animation: `fadeSlideUp 0.8s ease-out ${
+                      0.2 * (index + 1)
+                    }s forwards`,
+                  }}
                 >
                   <div className="w-1.5 h-1.5 bg-amber-400 rounded-full mr-3 group-hover:w-2 group-hover:h-2 transition-all duration-200"></div>
                   <span className="text-sm sm:text-base">{name}</span>
@@ -128,7 +184,7 @@ const Footer = () => {
           {/* Contact */}
           <div
             className="bg-green-800/30 rounded-xl p-5 backdrop-blur-sm border border-green-700/30 shadow-md hover:shadow-lg transition-shadow duration-300"
-            style={{ animation: 'fadeSlideUp 0.8s ease-out forwards' }}
+            style={{ animation: "fadeSlideUp 0.8s ease-out forwards" }}
           >
             <h3 className="text-lg font-bold text-amber-400 border-b border-amber-400/30 pb-2 mb-4 flex items-center">
               <span className="bg-amber-400/20 p-1 rounded-md mr-2">
@@ -156,11 +212,15 @@ const Footer = () => {
                   href: "mailto:onlinehome.com.np@gmail.com",
                 },
               ].map((item, i) => (
-                <Link 
+                <Link
                   key={i}
                   href={item.href}
                   className="flex items-center group p-2 rounded-lg hover:bg-green-700/30 transition-colors duration-300"
-                  style={{ animation: `fadeSlideUp 0.8s ease-out ${0.2 * (i + 1)}s forwards` }}
+                  style={{
+                    animation: `fadeSlideUp 0.8s ease-out ${
+                      0.2 * (i + 1)
+                    }s forwards`,
+                  }}
                 >
                   <div className="bg-amber-500/10 p-2 rounded-lg text-amber-400 group-hover:bg-amber-500/20 group-hover:scale-110 transition-all duration-300">
                     <item.icon className="w-5 h-5" />
@@ -181,7 +241,7 @@ const Footer = () => {
           {/* Location */}
           <div
             className="bg-green-800/30 rounded-xl p-5 backdrop-blur-sm border border-green-700/30 shadow-md hover:shadow-lg transition-shadow duration-300"
-            style={{ animation: 'fadeSlideUp 0.8s ease-out forwards' }}
+            style={{ animation: "fadeSlideUp 0.8s ease-out forwards" }}
           >
             <h3 className="text-lg font-bold text-amber-400 border-b border-amber-400/30 pb-2 mb-4 flex items-center">
               <span className="bg-amber-400/20 p-1 rounded-md mr-2">
@@ -214,7 +274,9 @@ const Footer = () => {
                 {/* Logo Container */}
                 <div
                   className="relative w-28 h-28 rounded-xl bg-gradient-to-br from-white/10 to-white/5 p-4 ring-1 ring-white/20 shadow-lg overflow-hidden group"
-                  style={{ animation: 'fadeScaleBounce 0.8s ease-out forwards' }}
+                  style={{
+                    animation: "fadeScaleBounce 0.8s ease-out forwards",
+                  }}
                 >
                   <Image
                     src={Logo}
@@ -236,13 +298,15 @@ const Footer = () => {
                         {/* Copyright, Year, and Website Name */}
                         <div
                           className="flex items-center justify-center sm:justify-start gap-2"
-                          style={{ animation: 'fadeSlideUp 0.8s ease-out forwards' }}
+                          style={{
+                            animation: "fadeSlideUp 0.8s ease-out forwards",
+                          }}
                         >
                           <span
                             className="text-base bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-amber-500 animate-fade"
                             style={{
-                              backgroundSize: '200% 100%',
-                              animation: 'textShimmer 3s linear infinite',
+                              backgroundSize: "200% 100%",
+                              animation: "textShimmer 3s linear infinite",
                             }}
                           >
                             ©
@@ -250,8 +314,8 @@ const Footer = () => {
                           <span
                             className="text-base bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-amber-500 animate-fade"
                             style={{
-                              backgroundSize: '200% 100%',
-                              animation: 'textShimmer 3s linear infinite',
+                              backgroundSize: "200% 100%",
+                              animation: "textShimmer 3s linear infinite",
                             }}
                           >
                             {currentYear}
@@ -259,33 +323,41 @@ const Footer = () => {
                           <span
                             className="group relative text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-amber-500 transition-all duration-300 hover:scale-105"
                             style={{
-                              backgroundSize: '200% 100%',
-                              animation: 'textShimmer 3s linear infinite',
+                              backgroundSize: "200% 100%",
+                              animation: "textShimmer 3s linear infinite",
                             }}
                           >
                             onlinehome.com.np
                             <span
                               className="absolute -bottom-1 left-0 w-full h-0.5 bg-amber-400 opacity-0 group-hover:opacity-100"
-                              style={{ animation: ' 0.3s ease-in-out forwards', transformOrigin: 'left' }}
+                              style={{
+                                animation: " 0.3s ease-in-out forwards",
+                                transformOrigin: "left",
+                              }}
                             ></span>
                           </span>
                         </div>
                         {/* Tagline */}
                         <div
                           className="flex justify-center items-center px-4 sm:px-10 mt-2"
-                          style={{ animation: 'fadeScaleBounce 0.8s ease-out forwards' }}
+                          style={{
+                            animation: "fadeScaleBounce 0.8s ease-out forwards",
+                          }}
                         >
                           <p
                             className="group pl-6 relative text-lg font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-amber-200 to-amber-400 tracking-wide"
                             style={{
-                              backgroundSize: '200% 100%',
-                              animation: 'textShimmer 3s linear infinite',
+                              backgroundSize: "200% 100%",
+                              animation: "textShimmer 3s linear infinite",
                             }}
                           >
                             बर्षौं बर्षको बलियो सम्बन्ध
                             <span
                               className="absolute -bottom-1 left-0 w-full h-0.5 bg-amber-300 opacity-0 group-hover:opacity-100"
-                              style={{ animation: '0.3s ease-in-out forwards', transformOrigin: 'left' }}
+                              style={{
+                                animation: "0.3s ease-in-out forwards",
+                                transformOrigin: "left",
+                              }}
                             ></span>
                           </p>
                         </div>
@@ -293,21 +365,25 @@ const Footer = () => {
                         {/* Decorative Glow Elements */}
                         <div
                           className="absolute -top-4 -right-4 w-24 h-24 bg-amber-400/20 rounded-full blur-2xl"
-                          style={{ animation: 'glowPulse 2.5s ease-in-out infinite' }}
+                          style={{
+                            animation: "glowPulse 2.5s ease-in-out infinite",
+                          }}
                         ></div>
                         <div
                           className="absolute -bottom-4 -left-4 w-24 h-24 bg-amber-400/20 rounded-full blur-2xl"
-                          style={{ animation: 'glowPulse 2.5s ease-in-out infinite' }}
+                          style={{
+                            animation: "glowPulse 2.5s ease-in-out infinite",
+                          }}
                         ></div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               <div
                 className="text-gray-100 bg-amber-900/60 rounded-lg px-4 py-2 inline-block shadow-inner text-center text-sm sm:text-base"
-                style={{ animation: 'fadeScale 0.8s ease-out forwards' }}
+                style={{ animation: "fadeScale 0.8s ease-out forwards" }}
               >
                 शुरुमा फर्म चार्ज नलाग्ने विकल्प पनि उपलब्ध छ
               </div>

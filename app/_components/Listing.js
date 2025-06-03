@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { supabase } from "@/utils/supabase/client";
+
 import {
   HomeIcon,
   MapPinIcon,
@@ -14,7 +16,7 @@ import {
   SquaresPlusIcon,
   AdjustmentsHorizontalIcon,
   XMarkIcon,
-  FunnelIcon
+  FunnelIcon,
 } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
 import { formatCurrency } from "@/components/helpers/formatCurrency";
@@ -23,9 +25,12 @@ import FilterSection from "./FilterSection";
 import ActionToggle from "./ActionToggle";
 
 const PropertyCard = ({ item, toggleFavorite, favorites }) => {
-  const propertyLocation = item.address?.split(",")
-    .filter(part => !part.trim().toLowerCase().includes("nepal"))
-    .join(",").trim() || 'Unknown Location';
+  const propertyLocation =
+    item.address
+      ?.split(",")
+      .filter((part) => !part.trim().toLowerCase().includes("nepal"))
+      .join(",")
+      .trim() || "Unknown Location";
 
   return (
     <div className="relative group bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100">
@@ -33,13 +38,13 @@ const PropertyCard = ({ item, toggleFavorite, favorites }) => {
         {/* Image Container */}
         <div className="relative aspect-[16/9] w-full overflow-hidden">
           <Image
-            src={item.listingImages[0]?.url || '/default-image.jpg'}
+            src={item.listingImages[0]?.url || "/default-image.jpg"}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             priority
             quality={90}
             className="object-cover group-hover:scale-105 transition-transform duration-500"
-            alt={`${item.propertyType || 'Property'} in ${propertyLocation}`}
+            alt={`${item.propertyType || "Property"} in ${propertyLocation}`}
           />
 
           {/* Status Badge */}
@@ -55,9 +60,11 @@ const PropertyCard = ({ item, toggleFavorite, favorites }) => {
           </div>
 
           {/* Action Tag (Rent/Sale) */}
-          <div className={`absolute top-4 left-4 px-4 py-1 rounded text-white text-base font-medium ${
-            item.action === "Sell" ? "bg-blue-600" : "bg-purple-600"
-          }`}>
+          <div
+            className={`absolute top-4 left-4 px-4 py-1 rounded text-white text-base font-medium ${
+              item.action === "Sell" ? "bg-blue-600" : "bg-purple-600"
+            }`}
+          >
             {item.action === "Sell" ? "Sale" : "Rent"}
           </div>
         </div>
@@ -66,15 +73,13 @@ const PropertyCard = ({ item, toggleFavorite, favorites }) => {
         <div className="p-4">
           {/* Title */}
           <h2 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">
-            {item?.post_title || 'Property Title'}
+            {item?.post_title || "Property Title"}
           </h2>
 
           {/* Location */}
           <div className="flex items-center text-gray-600 mb-3">
             <MapPinIcon className="h-4 w-4 mr-1 flex-shrink-0" />
-            <span className="text-sm line-clamp-1">
-              {propertyLocation}
-            </span>
+            <span className="text-sm line-clamp-1">{propertyLocation}</span>
           </div>
 
           {/* Features */}
@@ -89,7 +94,7 @@ const PropertyCard = ({ item, toggleFavorite, favorites }) => {
             </div>
             <div className="flex items-center gap-1 text-gray-700">
               <SquaresPlusIcon className="h-4 w-4 text-blue-600" />
-              <span>{item.area || 'N/A'}</span>
+              <span>{item.area || "N/A"}</span>
             </div>
           </div>
         </div>
@@ -119,10 +124,7 @@ function Listing({
   handleSearchClick,
   searchedAddress,
   setBathRoomsCount,
-  setRoomsCount,
-  setParkingCount,
-  setPriceRange,
-  setArea,
+
   currentAction,
   setCurrentAction,
   propertyType,
@@ -132,6 +134,13 @@ function Listing({
   const [address, setAddress] = useState();
   const [isSearchPerformed, setIsSearchPerformed] = useState(false);
   const [favorites, setFavorites] = useState([]);
+  const [roomsCount, setRoomsCount] = useState(0);
+  const [bathRoomsCount, setBathRoomsCount] = useState(0);
+
+  const [parkingCount, setParkingCount] = useState(0);
+  const [priceRange, setPriceRange] = useState(null); // Example: [5000, 10000]
+  const [area, setArea] = useState(null); // Example: [200, 500]
+
   const [isFilterApplied, setIsFilterApplied] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(9);
@@ -141,9 +150,9 @@ function Listing({
 
   // Combine all listings
   const allListings = [...(listing || []), ...(secondaryListings || [])];
-  
+
   // Filter listings based on viewFilter
-  const filteredListings = allListings.filter(item => {
+  const filteredListings = allListings.filter((item) => {
     if (viewFilter === "all") return true;
     if (viewFilter === "sale") return item.action === "Sell";
     if (viewFilter === "rent") return item.action === "Rent";
@@ -153,18 +162,94 @@ function Listing({
   const totalPages = Math.ceil(filteredListings.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredListings.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = filteredListings.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
 
   const toggleFavorite = (itemId, e) => {
     e.preventDefault();
-    setFavorites(prev => prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]);
+    setFavorites((prev) =>
+      prev.includes(itemId)
+        ? prev.filter((id) => id !== itemId)
+        : [...prev, itemId]
+    );
   };
 
-  const handleSearch = () => {
-    handleSearchClick();
+  // const handleSearch = () => {
+  //   console.log("Handle Search Before");
+  //   handleSearchClick();
+
+  //   setIsSearchPerformed(true);
+  //   setCurrentPage(1);
+  //   scrollToListing();
+
+  //   console.log("Handle Search After");
+  // };
+
+  const handleSearch = async () => {
     setIsSearchPerformed(true);
     setCurrentPage(1);
     scrollToListing();
+
+    try {
+      console.log("🔍 Searching Supabase listing...");
+      let query = supabase
+        .from("listing")
+        .select("*")
+        .eq("action", currentAction);
+
+      if (propertyType && propertyType !== "All") {
+        query = query.eq("propertyType", propertyType);
+      }
+
+      if (address?.label) {
+        const keyword = address.label.split(",")[0]?.trim();
+        if (keyword) {
+          query = query.ilike("address", `%${keyword}%`);
+        }
+      }
+
+      if (roomsCount) {
+        query = query.gte("rooms", roomsCount);
+      }
+
+      if (bathRoomsCount) {
+        query = query.gte("bathrooms", bathRoomsCount);
+      }
+
+      if (parkingCount) {
+        query = query.gte("parking", parkingCount);
+      }
+
+      if (priceRange && priceRange.length === 2) {
+        query = query.gte("price", priceRange[0]).lte("price", priceRange[1]);
+      }
+
+      if (area && area.length === 2) {
+        // Cast area from varchar to numeric for filtering
+        query = query
+          .filter("area::numeric", "gte", area[0])
+          .filter("area::numeric", "lte", area[1]);
+      }
+
+      const { data, error } = await query;
+
+      console.log(
+        "📦 Fetched from:",
+        process.env.NEXT_PUBLIC_SUPABASE_URL + "/rest/v1/listing"
+      );
+      console.log("✅ Listings:", data);
+
+      if (error) {
+        console.error("❌ Supabase query failed:", error.message);
+      } else {
+        setListing(data || []);
+        setSecondaryListings([]);
+      }
+    } catch (err) {
+      console.error("🚨 Unexpected search error:", err);
+    }
   };
 
   const handlePageChange = (pageNumber) => {
@@ -174,7 +259,10 @@ function Listing({
 
   const scrollToListing = () => {
     if (listingsContainerRef.current) {
-      listingsContainerRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      listingsContainerRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     }
   };
 
@@ -264,8 +352,8 @@ function Listing({
               <button
                 onClick={() => setCurrentAction("Sell")}
                 className={`flex-1 py-2 rounded-lg text-center font-medium ${
-                  currentAction === "Sell" 
-                    ? "bg-blue-600 text-white" 
+                  currentAction === "Sell"
+                    ? "bg-blue-600 text-white"
                     : "text-white hover:bg-white/20"
                 }`}
               >
@@ -274,8 +362,8 @@ function Listing({
               <button
                 onClick={() => setCurrentAction("Rent")}
                 className={`flex-1 py-2 rounded-lg text-center font-medium ${
-                  currentAction === "Rent" 
-                    ? "bg-blue-600 text-white" 
+                  currentAction === "Rent"
+                    ? "bg-blue-600 text-white"
                     : "text-white hover:bg-white/20"
                 }`}
               >
@@ -286,8 +374,10 @@ function Listing({
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
               {/* Property Type */}
               <div className="col-span-1">
-                <label className="block text-white text-sm mb-1">Property Type</label>
-                <select 
+                <label className="block text-white text-sm mb-1">
+                  Property Type
+                </label>
+                <select
                   className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={propertyType}
                   onChange={(e) => setPropertyType(e.target.value)}
@@ -302,7 +392,9 @@ function Listing({
 
               {/* Location Search */}
               <div className="col-span-3">
-                <label className="block text-white text-sm mb-1">Location</label>
+                <label className="block text-white text-sm mb-1">
+                  Location
+                </label>
                 <div className="bg-white rounded-lg">
                   <OpenStreetMapSearch
                     selectedAddress={(v) => {
@@ -323,7 +415,11 @@ function Listing({
                 className="flex items-center gap-2 text-white hover:text-blue-200 transition-colors"
               >
                 <AdjustmentsHorizontalIcon className="h-5 w-5" />
-                <span>{showAdvancedFilters ? "Hide Advanced Filters" : "Show Advanced Filters"}</span>
+                <span>
+                  {showAdvancedFilters
+                    ? "Hide Advanced Filters"
+                    : "Show Advanced Filters"}
+                </span>
                 {showAdvancedFilters ? (
                   <XMarkIcon className="h-4 w-4" />
                 ) : (
@@ -371,9 +467,14 @@ function Listing({
               <div className="flex items-center gap-2 text-blue-800">
                 <MapPinIcon className="h-5 w-5 flex-shrink-0" />
                 <h2 className="font-medium">
-                  Found <span className="font-bold">{filteredListings.length}</span> Properties in or nearby{" "}
+                  Found{" "}
+                  <span className="font-bold">{filteredListings.length}</span>{" "}
+                  Properties in or nearby{" "}
                   <span className="font-bold">
-                    {address?.label.split(",").filter(item => item.trim() !== "Nepal").join(",")}
+                    {address?.label
+                      .split(",")
+                      .filter((item) => item.trim() !== "Nepal")
+                      .join(",")}
                   </span>
                 </h2>
               </div>
@@ -386,8 +487,8 @@ function Listing({
               <button
                 onClick={() => setViewFilter("all")}
                 className={`pb-3 px-1 font-medium relative ${
-                  viewFilter === "all" 
-                    ? "text-blue-600" 
+                  viewFilter === "all"
+                    ? "text-blue-600"
                     : "text-gray-500 hover:text-gray-800"
                 }`}
               >
@@ -399,8 +500,8 @@ function Listing({
               <button
                 onClick={() => setViewFilter("sale")}
                 className={`pb-3 px-1 font-medium relative ${
-                  viewFilter === "sale" 
-                    ? "text-blue-600" 
+                  viewFilter === "sale"
+                    ? "text-blue-600"
                     : "text-gray-500 hover:text-gray-800"
                 }`}
               >
@@ -412,8 +513,8 @@ function Listing({
               <button
                 onClick={() => setViewFilter("rent")}
                 className={`pb-3 px-1 font-medium relative ${
-                  viewFilter === "rent" 
-                    ? "text-blue-600" 
+                  viewFilter === "rent"
+                    ? "text-blue-600"
                     : "text-gray-500 hover:text-gray-800"
                 }`}
               >
@@ -431,17 +532,19 @@ function Listing({
               <FunnelIcon className="h-4 w-4 text-gray-500" />
               <span className="font-medium">Filters:</span>
             </span>
-            
+
             <span className="bg-blue-50 text-blue-800 px-2 py-1 rounded-md">
               {propertyType === "All" ? "All Properties" : propertyType}
             </span>
-            
+
             {viewFilter !== "all" && (
-              <span className={`px-2 py-1 rounded-md ${
-                viewFilter === "sale" 
-                  ? "bg-blue-50 text-blue-800" 
-                  : "bg-purple-50 text-purple-800"
-              }`}>
+              <span
+                className={`px-2 py-1 rounded-md ${
+                  viewFilter === "sale"
+                    ? "bg-blue-50 text-blue-800"
+                    : "bg-purple-50 text-purple-800"
+                }`}
+              >
                 For {viewFilter === "sale" ? "Sale" : "Rent"}
               </span>
             )}
@@ -449,15 +552,16 @@ function Listing({
 
           {/* Property Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {currentItems.map(item => 
-              item?.listingImages?.[0]?.url && (
-                <PropertyCard
-                  key={item.id}
-                  item={item}
-                  toggleFavorite={toggleFavorite}
-                  favorites={favorites}
-                />
-              )
+            {currentItems.map(
+              (item) =>
+                item?.listingImages?.[0]?.url && (
+                  <PropertyCard
+                    key={item.id}
+                    item={item}
+                    toggleFavorite={toggleFavorite}
+                    favorites={favorites}
+                  />
+                )
             )}
           </div>
 
@@ -469,9 +573,9 @@ function Listing({
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
                   className={`flex items-center px-3 py-1.5 border rounded-md text-sm ${
-                    currentPage === 1 
-                      ? 'text-gray-400 border-gray-200 cursor-not-allowed' 
-                      : 'text-gray-700 border-gray-300 hover:bg-gray-50'
+                    currentPage === 1
+                      ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                      : "text-gray-700 border-gray-300 hover:bg-gray-50"
                   }`}
                 >
                   <ChevronLeftIcon className="h-4 w-4 mr-1" />
@@ -487,8 +591,8 @@ function Listing({
                   disabled={currentPage === totalPages}
                   className={`flex items-center px-3 py-1.5 border rounded-md text-sm ${
                     currentPage === totalPages
-                      ? 'text-gray-400 border-gray-200 cursor-not-allowed'
-                      : 'text-gray-700 border-gray-300 hover:bg-gray-50'
+                      ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                      : "text-gray-700 border-gray-300 hover:bg-gray-50"
                   }`}
                 >
                   <span>Next</span>
@@ -497,7 +601,9 @@ function Listing({
               </div>
 
               <div className="text-sm text-gray-500">
-                Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredListings.length)} of {filteredListings.length} listings
+                Showing {indexOfFirstItem + 1}-
+                {Math.min(indexOfLastItem, filteredListings.length)} of{" "}
+                {filteredListings.length} listings
               </div>
             </div>
           )}
@@ -507,8 +613,12 @@ function Listing({
             <div className="text-center py-12">
               <div className="bg-gray-50 max-w-md mx-auto p-6 rounded-lg border border-gray-200">
                 <MagnifyingGlassIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-1">No properties found</h3>
-                <p className="text-gray-500 mb-4">Try adjusting your search filters or location</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-1">
+                  No properties found
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  Try adjusting your search filters or location
+                </p>
                 <button
                   onClick={() => {
                     setViewFilter("all");
