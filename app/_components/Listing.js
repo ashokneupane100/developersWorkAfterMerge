@@ -38,7 +38,7 @@ const PropertyCard = ({ item, toggleFavorite, favorites }) => {
         {/* Image Container */}
         <div className="relative aspect-[16/9] w-full overflow-hidden">
           <Image
-            src={item.listingImages[0]?.url || "/default-image.jpg"}
+            src={item.listingImages?.[0]?.url || "/default-image.jpg"}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             priority
@@ -123,46 +123,35 @@ function Listing({
   secondaryListings,
   handleSearchClick,
   searchedAddress,
-  setBathRoomsCount, // This is coming from props
+  setBathRoomsCount,
   currentAction,
   setCurrentAction,
   propertyType,
   setPropertyType,
   setCoordinates,
-  setListing, // Add this prop to update the parent state
-  setSecondaryListings, // Add this prop to update the parent state
+  setListing, // Make sure this prop is being passed
+  setSecondaryListings, // Make sure this prop is being passed
 }) {
   const [address, setAddress] = useState();
   const [isSearchPerformed, setIsSearchPerformed] = useState(false);
   const [favorites, setFavorites] = useState([]);
   const [roomsCount, setRoomsCount] = useState(0);
-  // Remove this line as setBathRoomsCount is coming from props
-  // const [bathRoomsCount, setBathRoomsCount] = useState(0);
-  const [bathRoomsCount, setBathRoomsCountLocal] = useState(0); // Local state for internal use
-
+  const [bathRoomsCount, setBathRoomsCountLocal] = useState(0);
   const [parkingCount, setParkingCount] = useState(0);
-  const [priceRange, setPriceRange] = useState(null); // Example: [5000, 10000]
-  const [area, setArea] = useState(null); // Example: [200, 500]
-
+  const [priceRange, setPriceRange] = useState(null);
+  const [area, setArea] = useState(null);
   const [isFilterApplied, setIsFilterApplied] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(9);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [viewFilter, setViewFilter] = useState("all"); // "all", "sale", "rent"
+  const [viewFilter, setViewFilter] = useState("all");
   const listingsContainerRef = useRef(null);
 
-  // Combine all listings
-  // const allListings = [...(listing || []), ...(secondaryListings || [])];
-  const allListings = listing || [];
-
-  // const allListings = isSearchPerformed
-  //   ? listing
-  //   : [...(listing || []), ...(secondaryListings || [])];
-
-  // const allListings = isSearchPerformed ? listing : secondaryListings;
+  // ✅ FIXED: Use search results when available, otherwise use props
+  const displayListings = isSearchPerformed && listing?.length > 0 ? listing : [...(listing || []), ...(secondaryListings || [])];
 
   // Filter listings based on viewFilter
-  const filteredListings = allListings.filter((item) => {
+  const filteredListings = displayListings.filter((item) => {
     if (viewFilter === "all") return true;
     if (viewFilter === "sale") return item.action === "Sell";
     if (viewFilter === "rent") return item.action === "Rent";
@@ -172,11 +161,7 @@ function Listing({
   const totalPages = Math.ceil(filteredListings.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredListings.slice(
-    indexOfFirstItem,
-    indexOfLastItem
-  );
-  const [filteredData, setFilteredData] = useState([]);
+  const currentItems = filteredListings.slice(indexOfFirstItem, indexOfLastItem);
 
   const toggleFavorite = (itemId, e) => {
     e.preventDefault();
@@ -216,9 +201,11 @@ function Listing({
 
       console.log("🔍 Supabase Search Payload:", searchPayload);
       console.log("🔍 Searching Supabase listing...");
+      
+      // ✅ FIXED: Include listingImages in the query
       let query = supabase
         .from("listing")
-        .select("*", { count: "exact" })
+        .select("*, listingImages(url, listing_id)", { count: "exact" })
         .eq("action", currentAction)
         .limit(1000);
 
@@ -255,16 +242,15 @@ function Listing({
         console.log(`✅ Found ${data?.length || 0} listings`);
         console.log("📋 Sample listing:", data?.[0]);
         console.log("All Data: ", data);
-        setFilteredData(data);
-        console.log("Data Filtered :", filteredData)
-        // console.log("📦 Full Payload:", JSON.stringify(data, null, 2));
 
-        // Update parent state if setters are available
-        if (setListing) {
+        // ✅ FIXED: Update parent state properly
+        if (setListing && typeof setListing === 'function') {
           setListing(data || []);
+          console.log("✅ Updated parent listing state");
         }
-        if (setSecondaryListings) {
-          setSecondaryListings([]); // ✅ this clears secondary listings
+        if (setSecondaryListings && typeof setSecondaryListings === 'function') {
+          setSecondaryListings([]);
+          console.log("✅ Cleared secondary listings");
         }
       }
     } catch (err) {
@@ -452,7 +438,7 @@ function Listing({
             {showAdvancedFilters && (
               <div className="bg-white/20 rounded-lg p-4 mb-4">
                 <FilterSection
-                  setBathRoomsCount={setBathRoomsCountLocal} // Use local state
+                  setBathRoomsCount={setBathRoomsCountLocal}
                   setRoomsCount={setRoomsCount}
                   setParkingCount={setParkingCount}
                   setPriceRange={setPriceRange}

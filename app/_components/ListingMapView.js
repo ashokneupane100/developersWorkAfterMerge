@@ -214,6 +214,8 @@ function ListingMapView({
           propertyType={propertyType}
           setPropertyType={setPropertyType}
           setCoordinates={setCoordinates}
+          setListing={setPrimaryListings} // ✅ FIXED: Pass the state setter
+          setSecondaryListings={setSecondaryListings} // ✅ FIXED: Pass the state setter
           isSearchPerformed={isSearchPerformed}
           isFilterApplied={isFilterApplied}
           address={address}
