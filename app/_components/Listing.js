@@ -56,7 +56,7 @@ const PropertyCard = ({ item, toggleFavorite, favorites }) => {
 
           {/* Price Tag */}
           <div className="absolute bottom-2 right-2 bg-white/90 px-3 py-1 rounded text-blue-900 font-semibold text-sm">
-            Rs {formatCurrency(item.price || 0)}
+            {item.price ? `Rs ${formatCurrency(item.price)}` : "Price on Request"}
           </div>
 
           {/* Action Tag (Rent/Sale) */}
@@ -73,24 +73,26 @@ const PropertyCard = ({ item, toggleFavorite, favorites }) => {
         <div className="p-4">
           {/* Title */}
           <h2 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">
-            {item?.post_title || "Property Title"}
+            {item?.post_title || item?.propertyType || "Property Title"}
           </h2>
 
           {/* Location */}
           <div className="flex items-center text-gray-600 mb-3">
             <MapPinIcon className="h-4 w-4 mr-1 flex-shrink-0" />
-            <span className="text-sm line-clamp-1">{propertyLocation}</span>
+            <span className="text-sm line-clamp-1">
+              {item?.full_address || item?.address || propertyLocation}
+            </span>
           </div>
 
           {/* Features */}
           <div className="grid grid-cols-3 gap-2 text-sm">
             <div className="flex items-center gap-1 text-gray-700">
               <HomeIcon className="h-4 w-4 text-blue-600" />
-              <span>{item.rooms || 0} Rooms</span>
+              <span>{item.rooms || "N/A"} Rooms</span>
             </div>
             <div className="flex items-center gap-1 text-gray-700">
               <BeakerIcon className="h-4 w-4 text-blue-600" />
-              <span>{item.bathrooms || 0} Baths</span>
+              <span>{item.bathrooms || "N/A"} Baths</span>
             </div>
             <div className="flex items-center gap-1 text-gray-700">
               <SquaresPlusIcon className="h-4 w-4 text-blue-600" />
@@ -145,6 +147,7 @@ function Listing({
   const [itemsPerPage] = useState(9);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [viewFilter, setViewFilter] = useState("all");
+  const [isLoading, setIsLoading] = useState(false); // ✅ Add loading state
   const listingsContainerRef = useRef(null);
 
   // ✅ FIXED: Use search results when available, otherwise use props
@@ -183,6 +186,7 @@ function Listing({
     console.log("Price Range:", priceRange);
     console.log("Area:", area);
 
+    setIsLoading(true); // ✅ Start loading
     setIsSearchPerformed(true);
     setCurrentPage(1);
     scrollToListing();
@@ -255,6 +259,8 @@ function Listing({
       }
     } catch (err) {
       console.error("🚨 Unexpected search error:", err);
+    } finally {
+      setIsLoading(false); // ✅ Stop loading regardless of success/failure
     }
   };
 
@@ -452,12 +458,24 @@ function Listing({
 
             {/* Search Button */}
             <button
-              className="w-full bg-green-700 hover:bg-green-800 text-white font-bold text-xl p-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
+              className="w-full bg-green-700 hover:bg-green-800 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold text-xl p-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
               onClick={handleSearch}
+              disabled={isLoading} // ✅ Disable button while loading
             >
               <div className="flex items-center justify-center gap-2">
-                <MagnifyingGlassIcon className="h-6 w-6" />
-                <span>Search Properties</span>
+                {isLoading ? (
+                  // ✅ Show spinner when loading
+                  <>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                    <span>Searching...</span>
+                  </>
+                ) : (
+                  // ✅ Show normal search icon when not loading
+                  <>
+                    <MagnifyingGlassIcon className="h-6 w-6" />
+                    <span>Search Properties</span>
+                  </>
+                )}
               </div>
             </button>
           </div>
@@ -558,21 +576,38 @@ function Listing({
 
           {/* Property Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {currentItems.map(
-              (item) =>
-                item?.listingImages?.[0]?.url && (
-                  <PropertyCard
-                    key={item.id}
-                    item={item}
-                    toggleFavorite={toggleFavorite}
-                    favorites={favorites}
-                  />
-                )
+            {/* ✅ Show loader when searching */}
+            {isLoading ? (
+              // Loading skeleton cards
+              Array.from({ length: 6 }).map((_, index) => (
+                <div key={`skeleton-${index}`} className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100 animate-pulse">
+                  <div className="aspect-[16/9] w-full bg-gray-200"></div>
+                  <div className="p-4">
+                    <div className="h-6 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="h-4 bg-gray-200 rounded"></div>
+                      <div className="h-4 bg-gray-200 rounded"></div>
+                      <div className="h-4 bg-gray-200 rounded"></div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              // Actual property cards - ✅ FIXED: Removed the image condition
+              currentItems.map((item) => (
+                <PropertyCard
+                  key={item.id}
+                  item={item}
+                  toggleFavorite={toggleFavorite}
+                  favorites={favorites}
+                />
+              ))
             )}
           </div>
 
           {/* Pagination */}
-          {filteredListings.length > itemsPerPage && (
+          {!isLoading && filteredListings.length > itemsPerPage && (
             <div className="flex flex-col items-center space-y-4">
               <div className="flex items-center space-x-2">
                 <button
@@ -615,7 +650,7 @@ function Listing({
           )}
 
           {/* No Results */}
-          {filteredListings.length === 0 && (
+          {!isLoading && filteredListings.length === 0 && (
             <div className="text-center py-12">
               <div className="bg-gray-50 max-w-md mx-auto p-6 rounded-lg border border-gray-200">
                 <MagnifyingGlassIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
