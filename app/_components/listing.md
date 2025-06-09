@@ -176,7 +176,6 @@ function Listing({
     indexOfFirstItem,
     indexOfLastItem
   );
-  const [filteredData, setFilteredData] = useState([]);
 
   const toggleFavorite = (itemId, e) => {
     e.preventDefault();
@@ -255,8 +254,6 @@ function Listing({
         console.log(`✅ Found ${data?.length || 0} listings`);
         console.log("📋 Sample listing:", data?.[0]);
         console.log("All Data: ", data);
-        setFilteredData(data);
-        console.log("Data Filtered :", filteredData)
         // console.log("📦 Full Payload:", JSON.stringify(data, null, 2));
 
         // Update parent state if setters are available
