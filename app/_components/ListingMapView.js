@@ -27,6 +27,9 @@ function ListingMapView({
   const [isFilterApplied, setIsFilterApplied] = useState(false);
   const [address, setAddress] = useState();
 
+  // ✅ NEW: Store all address-based data for map
+  const [allAddressData, setAllAddressData] = useState([]);
+
   // Initialize with props
   useEffect(() => {
     setCurrentAction(initialAction);
@@ -82,118 +85,28 @@ function ListingMapView({
     fetchListings(currentAction);
   }, [currentAction, propertyType]);
 
+  // ✅ UPDATED: This function is now handled differently in the Listing component
   const handleSearchClick = async () => {
-    try {
-      if (!searchedAddress?.label) {
-        toast.error("Please provide a search location");
-        return;
-      }
-
-      const specificLocation = searchedAddress.label
-        .split(",")[0]
-        .trim()
-        .toLowerCase();
-
-      const buildQueryWithFilters = (query) => {
-        if (propertyType) {
-          query = query.eq("propertyType", propertyType);
-        }
-        if (roomsCount > 0) {
-          query = query.gte("rooms", roomsCount);
-        }
-        if (bathRoomsCount > 0) {
-          query = query.gte("bathrooms", bathRoomsCount);
-        }
-        if (parkingCount > 0) {
-          query = query.gte("parking", parkingCount);
-        }
-        return query.order("created_at", { ascending: false });
-      };
-
-      let query = supabase
-        .from("listing")
-        .select("*, listingImages(url, listing_id)")
-        .eq("active", true)
-        .eq("action", currentAction)
-        .ilike("address", `%${specificLocation}%`);
-
-      query = buildQueryWithFilters(query);
-
-      const { data: specificMatches, error: specificError } = await query;
-
-      if (specificError) throw specificError;
-
-      if (specificMatches && specificMatches.length > 0) {
-        setPrimaryListings(specificMatches);
-
-        // Fetch secondary listings without property type filter
-        const { data: secondaryData } = await supabase
-          .from("listing")
-          .select("*, listingImages(url, listing_id)")
-          .eq("active", true)
-          .eq("action", currentAction === "Sell" ? "Rent" : "Sell")
-          .ilike("address", `%${specificLocation}%`)
-          .order("created_at", { ascending: false });
-
-        setSecondaryListings(secondaryData || []);
-        setIsSearchPerformed(true);
-        setIsFilterApplied(false);
-        setAddress(searchedAddress);
-        toast.success(
-          `Found ${specificMatches.length} properties in ${specificLocation}`
-        );
-        return;
-      }
-
-      let kathmanduQuery = supabase
-        .from("listing")
-        .select("*, listingImages(url, listing_id)")
-        .eq("active", true)
-        .eq("action", currentAction)
-        .ilike("address", "%kathmandu%");
-
-      kathmanduQuery = buildQueryWithFilters(kathmanduQuery);
-
-      const { data: kathmanduMatches, error: kathmanduError } =
-        await kathmanduQuery;
-
-      if (kathmanduError) throw kathmanduError;
-
-      if (kathmanduMatches && kathmanduMatches.length > 0) {
-        setPrimaryListings(kathmanduMatches);
-
-        // Fetch secondary listings for Kathmandu without property type filter
-        const { data: secondaryData } = await supabase
-          .from("listing")
-          .select("*, listingImages(url, listing_id)")
-          .eq("active", true)
-          .eq("action", currentAction === "Sell" ? "Rent" : "Sell")
-          .ilike("address", "%kathmandu%")
-          .order("created_at", { ascending: false });
-
-        setSecondaryListings(secondaryData || []);
-        setIsSearchPerformed(true);
-        setIsFilterApplied(false);
-        setAddress(searchedAddress);
-        toast.warning(
-          `No properties found in ${specificLocation}. Showing ${kathmanduMatches.length} properties in Kathmandu matching your criteria`
-        );
-      } else {
-        toast.warning("No properties found matching your criteria");
-        setPrimaryListings([]);
-        setSecondaryListings([]);
-        setIsSearchPerformed(true);
-        setIsFilterApplied(false);
-        setAddress(searchedAddress);
-      }
-    } catch (error) {
-      console.error("Search error:", error);
-      toast.error("Error performing search");
-    }
+    // This is kept for compatibility but actual search is now handled in Listing component
+    console.log("Search click handled in Listing component");
   };
 
-  // Combine primary and secondary listings for the map
-  const allListings = [...primaryListings, ...secondaryListings];
+  // ✅ NEW: Listen for updates from Listing component
+  const handleListingUpdate = (data) => {
+    setAllAddressData(data);
+  };
+
+  // ✅ UPDATED: Combine data for map display
+  const getMapListings = () => {
+    // If address search was performed, use that data
+    if (allAddressData.length > 0) {
+      return allAddressData;
+    }
+    // Otherwise use default listings
+    return [...primaryListings, ...secondaryListings];
+  };
+
+  const mapListings = getMapListings();
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -214,11 +127,13 @@ function ListingMapView({
           propertyType={propertyType}
           setPropertyType={setPropertyType}
           setCoordinates={setCoordinates}
-          setListing={setPrimaryListings} // ✅ FIXED: Pass the state setter
-          setSecondaryListings={setSecondaryListings} // ✅ FIXED: Pass the state setter
+          setListing={setPrimaryListings}
+          setSecondaryListings={setSecondaryListings}
           isSearchPerformed={isSearchPerformed}
           isFilterApplied={isFilterApplied}
           address={address}
+          // ✅ NEW: Pass callback to get address data for map
+          onAddressDataUpdate={handleListingUpdate}
         />
       </div>
 
@@ -230,12 +145,24 @@ function ListingMapView({
             <div className="p-4 border-b border-gray-200 bg-gray-50">
               <div className="flex items-center gap-2">
                 <MapIcon className="h-5 w-5 text-blue-600" />
-                <h2 className="text-lg font-medium text-gray-900">Property Map</h2>
+                <h2 className="text-lg font-medium text-gray-900">
+                  Property Map 
+                  {mapListings.length > 0 && (
+                    <span className="text-sm font-normal text-gray-600 ml-2">
+                      ({mapListings.length} properties)
+                    </span>
+                  )}
+                </h2>
               </div>
+              {allAddressData.length > 0 && (
+                <div className="mt-2 text-sm text-gray-600">
+                  📍 Showing properties from search results
+                </div>
+              )}
             </div>
             <div className="h-[500px]">
               <OpenStreetMapSection
-                listing={allListings}
+                listing={mapListings}
                 coordinates={coordinates}
               />
             </div>
