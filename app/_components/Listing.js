@@ -17,6 +17,8 @@ import {
   AdjustmentsHorizontalIcon,
   XMarkIcon,
   FunnelIcon,
+  CurrencyDollarIcon,
+  BuildingOfficeIcon,
 } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
 import { formatCurrency } from "@/components/helpers/formatCurrency";
@@ -133,6 +135,7 @@ function Listing({
   setCoordinates,
   setListing,
   setSecondaryListings,
+  onAddressDataUpdate,
 }) {
   const [address, setAddress] = useState();
   const [isSearchPerformed, setIsSearchPerformed] = useState(false);
@@ -146,16 +149,29 @@ function Listing({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(9);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [showListingFilters, setShowListingFilters] = useState(false);
   const [viewFilter, setViewFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
   
-  // ✅ NEW: Store ALL fetched data from address search
+  // Filter states for listing section
+  const [tempFilters, setTempFilters] = useState({
+    minPrice: '',
+    maxPrice: '',
+    minArea: '',
+    maxArea: '',
+    rooms: 0,
+    bathrooms: 0,
+    parking: 0,
+    propertyType: 'All'
+  });
+  
+  // Store ALL fetched data from address search
   const [allAddressData, setAllAddressData] = useState([]);
   const [searchAddress, setSearchAddress] = useState(null);
   
   const listingsContainerRef = useRef(null);
 
-  // ✅ FIXED: Filter logic based on search state
+  // Filter logic based on search state
   const getFilteredListings = () => {
     // If search was performed, use address-based data
     if (isSearchPerformed && allAddressData.length > 0) {
@@ -196,7 +212,7 @@ function Listing({
     return [...(listing || []), ...(secondaryListings || [])];
   };
 
-  // ✅ NEW: Filter by view tabs (all/sale/rent)
+  // Filter by view tabs (all/sale/rent)
   const getDisplayListings = () => {
     const filteredData = getFilteredListings();
     
@@ -222,7 +238,7 @@ function Listing({
     );
   };
 
-  // ✅ UPDATED: Fetch ALL data from address, no action filtering
+  // Fetch ALL data from address, no action filtering
   const handleSearch = async () => {
     console.log("🔍 Starting address-based search...");
     
@@ -240,7 +256,7 @@ function Listing({
       const searchLocation = address.label.split(",")[0]?.trim();
       console.log("🔍 Searching for address:", searchLocation);
 
-      // ✅ FETCH ALL PROPERTIES FROM THIS ADDRESS (NO ACTION FILTER)
+      // Fetch ALL properties from this address (no action filter)
       let query = supabase
         .from("listing")
         .select("*, listingImages(url, listing_id)")
@@ -258,11 +274,16 @@ function Listing({
       console.log(`✅ Found ${data?.length || 0} total properties in ${searchLocation}`);
       console.log("📋 All fetched data:", data);
 
-      // ✅ Store ALL data from this address
+      // Store ALL data from this address
       setAllAddressData(data || []);
       setSearchAddress(searchLocation);
       
-      // ✅ Clear parent state since we're now using allAddressData
+      // Notify parent component about address data update
+      if (onAddressDataUpdate && typeof onAddressDataUpdate === 'function') {
+        onAddressDataUpdate(data || []);
+      }
+      
+      // Clear parent state since we're now using allAddressData
       if (setListing && typeof setListing === 'function') {
         setListing([]);
       }
@@ -284,6 +305,9 @@ function Listing({
         if (!kathmanduError && kathmanduData?.length > 0) {
           setAllAddressData(kathmanduData);
           setSearchAddress("Kathmandu");
+          if (onAddressDataUpdate && typeof onAddressDataUpdate === 'function') {
+            onAddressDataUpdate(kathmanduData);
+          }
           console.log(`✅ Found ${kathmanduData.length} properties in Kathmandu`);
         }
       }
@@ -366,12 +390,82 @@ function Listing({
     });
   };
 
-  // ✅ Reset page when filters change
+  // Count active filters
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (tempFilters.minPrice || tempFilters.maxPrice) count++;
+    if (tempFilters.minArea || tempFilters.maxArea) count++;
+    if (tempFilters.rooms > 0) count++;
+    if (tempFilters.bathrooms > 0) count++;
+    if (tempFilters.parking > 0) count++;
+    if (tempFilters.propertyType !== 'All') count++;
+    return count;
+  };
+
+  const activeFiltersCount = getActiveFiltersCount();
+
+  // Apply filters from temp state
+  const handleApplyFilters = () => {
+    setRoomsCount(tempFilters.rooms);
+    setBathRoomsCountLocal(tempFilters.bathrooms);
+    setParkingCount(tempFilters.parking);
+    setPropertyType(tempFilters.propertyType);
+    
+    // Set price range
+    if (tempFilters.minPrice || tempFilters.maxPrice) {
+      setPriceRange([
+        tempFilters.minPrice ? parseInt(tempFilters.minPrice) : 0,
+        tempFilters.maxPrice ? parseInt(tempFilters.maxPrice) : Infinity
+      ]);
+    } else {
+      setPriceRange(null);
+    }
+
+    // Set area range
+    if (tempFilters.minArea || tempFilters.maxArea) {
+      setArea([
+        tempFilters.minArea ? parseInt(tempFilters.minArea) : 0,
+        tempFilters.maxArea ? parseInt(tempFilters.maxArea) : Infinity
+      ]);
+    } else {
+      setArea(null);
+    }
+
+    setIsFilterApplied(true);
+    setShowListingFilters(false);
+    setCurrentPage(1);
+  };
+
+  const handleClearFilters = () => {
+    setTempFilters({
+      minPrice: '',
+      maxPrice: '',
+      minArea: '',
+      maxArea: '',
+      rooms: 0,
+      bathrooms: 0,
+      parking: 0,
+      propertyType: 'All'
+    });
+    
+    setRoomsCount(0);
+    setBathRoomsCountLocal(0);
+    setParkingCount(0);
+    setPriceRange(null);
+    setArea(null);
+    setPropertyType('All');
+    setIsFilterApplied(false);
+    setCurrentPage(1);
+  };
+
+  const propertyTypes = ['All', 'Room/Flat', 'House', 'Land', 'Shop'];
+
+  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [viewFilter, propertyType, roomsCount, bathRoomsCount, parkingCount, priceRange, area]);
 
-  // ✅ NEW: Get counts for each tab
+  // Get counts for each tab
   const getTabCounts = () => {
     const filteredData = getFilteredListings();
     return {
@@ -380,8 +474,6 @@ function Listing({
       rent: filteredData.filter(item => item.action === "Rent").length
     };
   };
-
-  const tabCounts = getTabCounts();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -591,35 +683,267 @@ function Listing({
             </div>
           </div>
 
-          {/* Filter Summary */}
-          <div className="mb-6 flex flex-wrap items-center gap-2 text-sm">
-            <span className="bg-gray-100 px-2 py-1 rounded-md flex items-center gap-1">
-              <FunnelIcon className="h-4 w-4 text-gray-500" />
-              <span className="font-medium">Active Filters:</span>
-            </span>
-
-            <span className="bg-blue-50 text-blue-800 px-2 py-1 rounded-md">
-              {propertyType === "All" ? "All Properties" : propertyType}
-            </span>
-
-            {isSearchPerformed && searchAddress && (
-              <span className="bg-green-50 text-green-800 px-2 py-1 rounded-md">
-                📍 {searchAddress}
+          {/* Filter Summary with Filter Button */}
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-2 text-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="bg-gray-100 px-2 py-1 rounded-md flex items-center gap-1">
+                <FunnelIcon className="h-4 w-4 text-gray-500" />
+                <span className="font-medium">Active Filters:</span>
               </span>
-            )}
 
-            {viewFilter !== "all" && (
-              <span
-                className={`px-2 py-1 rounded-md ${
-                  viewFilter === "sale"
-                    ? "bg-blue-50 text-blue-800"
-                    : "bg-purple-50 text-purple-800"
-                }`}
-              >
-                For {viewFilter === "sale" ? "Sale" : "Rent"}
+              <span className="bg-blue-50 text-blue-800 px-2 py-1 rounded-md">
+                {propertyType === "All" ? "All Properties" : propertyType}
               </span>
-            )}
+
+              {isSearchPerformed && searchAddress && (
+                <span className="bg-green-50 text-green-800 px-2 py-1 rounded-md">
+                  📍 {searchAddress}
+                </span>
+              )}
+
+              {viewFilter !== "all" && (
+                <span
+                  className={`px-2 py-1 rounded-md ${
+                    viewFilter === "sale"
+                      ? "bg-blue-50 text-blue-800"
+                      : "bg-purple-50 text-purple-800"
+                  }`}
+                >
+                  For {viewFilter === "sale" ? "Sale" : "Rent"}
+                </span>
+              )}
+
+              {roomsCount > 0 && (
+                <span className="bg-yellow-50 text-yellow-800 px-2 py-1 rounded-md text-xs">
+                  {roomsCount}+ rooms
+                </span>
+              )}
+
+              {bathRoomsCount > 0 && (
+                <span className="bg-cyan-50 text-cyan-800 px-2 py-1 rounded-md text-xs">
+                  {bathRoomsCount}+ baths
+                </span>
+              )}
+
+              {parkingCount > 0 && (
+                <span className="bg-orange-50 text-orange-800 px-2 py-1 rounded-md text-xs">
+                  {parkingCount}+ parking
+                </span>
+              )}
+
+              {priceRange && (
+                <span className="bg-emerald-50 text-emerald-800 px-2 py-1 rounded-md text-xs">
+                  Rs {priceRange[0]?.toLocaleString()} - Rs {priceRange[1] === Infinity ? '∞' : priceRange[1]?.toLocaleString()}
+                </span>
+              )}
+
+              {area && (
+                <span className="bg-indigo-50 text-indigo-800 px-2 py-1 rounded-md text-xs">
+                  {area[0]} - {area[1] === Infinity ? '∞' : area[1]} sq ft
+                </span>
+              )}
+            </div>
+
+            {/* Filter Toggle Button */}
+            <button
+              onClick={() => setShowListingFilters(!showListingFilters)}
+              className={`
+                flex items-center gap-2 px-4 py-2 rounded-lg border transition-all duration-200
+                ${showListingFilters
+                  ? 'bg-blue-600 text-white border-blue-700 hover:bg-blue-700' 
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }
+              `}
+            >
+              <AdjustmentsHorizontalIcon className="h-4 w-4" />
+              <span className="font-medium">
+                {showListingFilters ? 'Hide Filters' : 'Show Filters'}
+              </span>
+              {activeFiltersCount > 0 && (
+                <span className={`
+                  min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold flex items-center justify-center
+                  ${showListingFilters
+                    ? 'bg-white text-blue-600' 
+                    : 'bg-blue-600 text-white'
+                  }
+                `}>
+                  {activeFiltersCount}
+                </span>
+              )}
+              {showListingFilters ? (
+                <XMarkIcon className="h-4 w-4" />
+              ) : (
+                <ChevronLeftIcon className="h-4 w-4 transform rotate-90" />
+              )}
+            </button>
           </div>
+
+          {/* Advanced Filters Panel for Listings */}
+          {showListingFilters && (
+            <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-6">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <FunnelIcon className="h-5 w-5 text-blue-600" />
+                  Advanced Property Filters
+                  {activeFiltersCount > 0 && (
+                    <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
+                      {activeFiltersCount} active
+                    </span>
+                  )}
+                </h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Price Range */}
+                <div className="space-y-3">
+                  <label className="flex items-center text-sm font-medium text-gray-700 gap-2">
+                    <CurrencyDollarIcon className="h-4 w-4 text-green-600" />
+                    Price Range
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      placeholder="Min Price"
+                      value={tempFilters.minPrice}
+                      onChange={(e) => setTempFilters(prev => ({ ...prev, minPrice: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Max Price"
+                      value={tempFilters.maxPrice}
+                      onChange={(e) => setTempFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                </div>
+
+                {/* Area Range */}
+                <div className="space-y-3">
+                  <label className="flex items-center text-sm font-medium text-gray-700 gap-2">
+                    <BuildingOfficeIcon className="h-4 w-4 text-blue-600" />
+                    Area (sq ft)
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      placeholder="Min Area"
+                      value={tempFilters.minArea}
+                      onChange={(e) => setTempFilters(prev => ({ ...prev, minArea: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Max Area"
+                      value={tempFilters.maxArea}
+                      onChange={(e) => setTempFilters(prev => ({ ...prev, maxArea: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                </div>
+
+                {/* Property Type */}
+                <div className="space-y-3">
+                  <label className="flex items-center text-sm font-medium text-gray-700 gap-2">
+                    <HomeIcon className="h-4 w-4 text-purple-600" />
+                    Property Type
+                  </label>
+                  <select
+                    value={tempFilters.propertyType}
+                    onChange={(e) => setTempFilters(prev => ({ ...prev, propertyType: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                  >
+                    {propertyTypes.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Features Row */}
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <label className="text-sm font-medium text-gray-700 mb-4 block">Features</label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Bedrooms */}
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm text-gray-700 font-medium">Bedrooms</span>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setTempFilters(prev => ({ ...prev, rooms: Math.max(0, prev.rooms - 1) }))}
+                        className="w-8 h-8 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 font-medium"
+                      >
+                        -
+                      </button>
+                      <span className="w-8 text-center font-semibold text-gray-900">{tempFilters.rooms}</span>
+                      <button
+                        onClick={() => setTempFilters(prev => ({ ...prev, rooms: prev.rooms + 1 }))}
+                        className="w-8 h-8 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 font-medium"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Bathrooms */}
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm text-gray-700 font-medium">Bathrooms</span>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setTempFilters(prev => ({ ...prev, bathrooms: Math.max(0, prev.bathrooms - 1) }))}
+                        className="w-8 h-8 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 font-medium"
+                      >
+                        -
+                      </button>
+                      <span className="w-8 text-center font-semibold text-gray-900">{tempFilters.bathrooms}</span>
+                      <button
+                        onClick={() => setTempFilters(prev => ({ ...prev, bathrooms: prev.bathrooms + 1 }))}
+                        className="w-8 h-8 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 font-medium"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Parking */}
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm text-gray-700 font-medium">Parking Spaces</span>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setTempFilters(prev => ({ ...prev, parking: Math.max(0, prev.parking - 1) }))}
+                        className="w-8 h-8 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 font-medium"
+                      >
+                        -
+                      </button>
+                      <span className="w-8 text-center font-semibold text-gray-900">{tempFilters.parking}</span>
+                      <button
+                        onClick={() => setTempFilters(prev => ({ ...prev, parking: prev.parking + 1 }))}
+                        className="w-8 h-8 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 font-medium"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Filter Actions */}
+              <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-4 border-t border-gray-200">
+                <button
+                  onClick={handleApplyFilters}
+                  className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
+                >
+                  <MagnifyingGlassIcon className="h-4 w-4" />
+                  Apply Filters & Search
+                </button>
+                <button
+                  onClick={handleClearFilters}
+                  className="px-6 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-50 border border-gray-300 rounded-lg transition-colors text-sm font-medium"
+                >
+                  Clear All Filters
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Property Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -720,6 +1044,7 @@ function Listing({
                     setArea(null);
                     setIsSearchPerformed(false);
                     setAllAddressData([]);
+                    handleClearFilters();
                   }}
                   className="text-blue-600 font-medium hover:text-blue-800"
                 >

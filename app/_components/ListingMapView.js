@@ -6,7 +6,17 @@ import { toast } from "sonner";
 import OpenStreetMapSection from "./OpenStreetMapSection";
 import LoanCalculator from "@/components/helpers/loanCalculator";
 import Link from "next/link";
-import { MapIcon, CalculatorIcon } from "@heroicons/react/24/outline";
+import { 
+  MapIcon, 
+  CalculatorIcon, 
+  FunnelIcon, 
+  XMarkIcon,
+  HomeIcon,
+  CurrencyDollarIcon,
+  BuildingOfficeIcon,
+  MagnifyingGlassIcon,
+  AdjustmentsHorizontalIcon
+} from "@heroicons/react/24/outline";
 
 function ListingMapView({
   initialAction = "Sell",
@@ -26,19 +36,30 @@ function ListingMapView({
   const [isSearchPerformed, setIsSearchPerformed] = useState(false);
   const [isFilterApplied, setIsFilterApplied] = useState(false);
   const [address, setAddress] = useState();
-
-  // ✅ NEW: Store all address-based data for map
   const [allAddressData, setAllAddressData] = useState([]);
+
+  // Filter UI state
+  const [showFilters, setShowFilters] = useState(false);
+  const [tempFilters, setTempFilters] = useState({
+    minPrice: '',
+    maxPrice: '',
+    minArea: '',
+    maxArea: '',
+    rooms: 0,
+    bathrooms: 0,
+    parking: 0,
+    propertyType: 'All'
+  });
 
   // Initialize with props
   useEffect(() => {
     setCurrentAction(initialAction);
     setPropertyType(initialPropertyType);
+    setTempFilters(prev => ({ ...prev, propertyType: initialPropertyType }));
   }, [initialAction, initialPropertyType]);
 
   const fetchListings = async (action, setPrimarySecondary = true) => {
     try {
-      // Primary listings query (with property type filter)
       let primaryQuery = supabase
         .from("listing")
         .select("*, listingImages(url, listing_id)")
@@ -46,7 +67,6 @@ function ListingMapView({
         .eq("action", action)
         .order("created_at", { ascending: false });
 
-      // Add property type filter if it's not "All"
       if (propertyType && propertyType !== "All") {
         primaryQuery = primaryQuery.eq("propertyType", propertyType);
       }
@@ -57,14 +77,13 @@ function ListingMapView({
         if (primaryError) throw primaryError;
         setPrimaryListings(primaryData || []);
 
-        // Secondary listings query
         const oppositeAction = action === "Sell" ? "Rent" : "Sell";
         const { data: secondaryData, error: secondaryError } = await supabase
           .from("listing")
           .select("*, listingImages(url, listing_id)")
           .eq("active", true)
           .eq("action", oppositeAction)
-          .eq("propertyType", propertyType) // Also filter secondary listings by property type
+          .eq("propertyType", propertyType)
           .order("created_at", { ascending: false });
 
         if (secondaryError) throw secondaryError;
@@ -85,31 +104,148 @@ function ListingMapView({
     fetchListings(currentAction);
   }, [currentAction, propertyType]);
 
-  // ✅ UPDATED: This function is now handled differently in the Listing component
   const handleSearchClick = async () => {
-    // This is kept for compatibility but actual search is now handled in Listing component
     console.log("Search click handled in Listing component");
   };
 
-  // ✅ NEW: Listen for updates from Listing component
   const handleListingUpdate = (data) => {
     setAllAddressData(data);
   };
 
-  // ✅ UPDATED: Combine data for map display
   const getMapListings = () => {
-    // If address search was performed, use that data
     if (allAddressData.length > 0) {
       return allAddressData;
     }
-    // Otherwise use default listings
     return [...primaryListings, ...secondaryListings];
   };
 
   const mapListings = getMapListings();
 
+  // Filter handlers
+  const handleApplyFilters = () => {
+    // Update the main filter states
+    setRoomsCount(tempFilters.rooms);
+    setBathRoomsCount(tempFilters.bathrooms);
+    setParkingCount(tempFilters.parking);
+    setPropertyType(tempFilters.propertyType);
+    
+    // Set price range
+    if (tempFilters.minPrice || tempFilters.maxPrice) {
+      setPriceRange({
+        min: tempFilters.minPrice ? parseInt(tempFilters.minPrice) : 0,
+        max: tempFilters.maxPrice ? parseInt(tempFilters.maxPrice) : Infinity
+      });
+    } else {
+      setPriceRange(null);
+    }
+
+    // Set area range
+    if (tempFilters.minArea || tempFilters.maxArea) {
+      setArea({
+        min: tempFilters.minArea ? parseInt(tempFilters.minArea) : 0,
+        max: tempFilters.maxArea ? parseInt(tempFilters.maxArea) : Infinity
+      });
+    } else {
+      setArea(null);
+    }
+
+    setIsFilterApplied(true);
+    setShowFilters(false);
+    toast.success("Filters applied successfully!");
+  };
+
+  const handleClearFilters = () => {
+    setTempFilters({
+      minPrice: '',
+      maxPrice: '',
+      minArea: '',
+      maxArea: '',
+      rooms: 0,
+      bathrooms: 0,
+      parking: 0,
+      propertyType: 'All'
+    });
+    
+    setRoomsCount(0);
+    setBathRoomsCount(0);
+    setParkingCount(0);
+    setPriceRange(null);
+    setArea(null);
+    setPropertyType('All');
+    setIsFilterApplied(false);
+    
+    toast.success("Filters cleared!");
+  };
+
+  // Count active filters
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (tempFilters.minPrice || tempFilters.maxPrice) count++;
+    if (tempFilters.minArea || tempFilters.maxArea) count++;
+    if (tempFilters.rooms > 0) count++;
+    if (tempFilters.bathrooms > 0) count++;
+    if (tempFilters.parking > 0) count++;
+    if (tempFilters.propertyType !== 'All') count++;
+    return count;
+  };
+
+  const activeFiltersCount = getActiveFiltersCount();
+
+  const propertyTypes = ['All', 'House', 'Apartment', 'Condo', 'Townhouse', 'Villa', 'Studio'];
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
+
+      {/* Active Filters Display */}
+      {isFilterApplied && (
+        <div className="bg-blue-50 border-b border-blue-200 px-4 py-3">
+          <div className="max-w-6xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-blue-800">
+              <FunnelIcon className="h-4 w-4" />
+              <span className="font-medium">Active Filters:</span>
+              <div className="flex gap-2 flex-wrap">
+                {priceRange && (
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                    ${priceRange.min || 0} - ${priceRange.max === Infinity ? '∞' : priceRange.max}
+                  </span>
+                )}
+                {area && (
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                    {area.min || 0} - {area.max === Infinity ? '∞' : area.max} sq ft
+                  </span>
+                )}
+                {roomsCount > 0 && (
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                    {roomsCount}+ bedrooms
+                  </span>
+                )}
+                {bathRoomsCount > 0 && (
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                    {bathRoomsCount}+ bathrooms
+                  </span>
+                )}
+                {parkingCount > 0 && (
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                    {parkingCount}+ parking
+                  </span>
+                )}
+                {propertyType !== 'All' && (
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                    {propertyType}
+                  </span>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={handleClearFilters}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              Clear All
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Listing Component */}
       <div className="w-full">
         <Listing
@@ -132,7 +268,6 @@ function ListingMapView({
           isSearchPerformed={isSearchPerformed}
           isFilterApplied={isFilterApplied}
           address={address}
-          // ✅ NEW: Pass callback to get address data for map
           onAddressDataUpdate={handleListingUpdate}
         />
       </div>
