@@ -8,7 +8,8 @@ import {
   PhoneIcon, 
   UserIcon,
   HomeIcon,
-  ArrowRightOnRectangleIcon
+  ArrowRightOnRectangleIcon,
+  BuildingOfficeIcon
 } from '@heroicons/react/24/outline';
 import { FiPhoneCall } from 'react-icons/fi';
 import { Button } from "@heroui/react";
@@ -123,6 +124,16 @@ const Header = memo(function Header() {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-4">
+            {/* All Properties Button */}
+            <Link href="/all-properties" prefetch={false}>
+              <Button 
+                className="bg-green-600 border rounded-md hover:bg-green-700 text-white transition-colors duration-300 flex items-center gap-2"
+              >
+                <BuildingOfficeIcon className="w-4 h-4" />
+                <span>All Properties</span>
+              </Button>
+            </Link>
+            
             <Link href="/request-property" prefetch={false}>
               <Button 
                 className="bg-white border rounded-md border-green-600 hover:bg-green-700 text-green-700 hover:text-white transition-colors duration-300 flex items-center gap-2"
@@ -297,15 +308,26 @@ const Header = memo(function Header() {
             )}
           </div>
 
-          {/* Action Buttons Row */}
-          <div className="grid grid-cols-2 gap-2 p-2">
+          {/* Action Buttons Row - Updated for Mobile */}
+          <div className="grid grid-cols-3 gap-2 p-2">
+            {/* All Properties Button for Mobile */}
+            <Link href="/all-properties" prefetch={false} className="w-full">
+              <Button 
+                className="bg-green-600 hover:bg-green-700 text-white w-full flex items-center justify-center gap-1"
+                size="sm"
+              >
+                <BuildingOfficeIcon className="w-4 h-4" />
+                <span className="text-xs">All Properties</span>
+              </Button>
+            </Link>
+            
             <Link href="/add-new-listing" prefetch={false} className="w-full">
               <Button 
-                className="bg-green-600 hover:bg-green-700 text-white w-full flex items-center justify-center gap-2"
+                className="bg-green-600 hover:bg-green-700 text-white w-full flex items-center justify-center gap-1"
                 size="sm"
               >
                 <PlusIcon className="w-4 h-4" />
-                <span>Post Property</span>
+                <span className="text-xs">Post Property</span>
               </Button>
             </Link>
             
@@ -316,7 +338,7 @@ const Header = memo(function Header() {
               onClick={() => window.location.href='tel:+9779851331644'}
             >
               <PhoneIcon className="w-4 h-4" />
-              <span>9851331644</span>
+              <span className="text-xs">9851331644</span>
             </Button>
           </div>
         </div>

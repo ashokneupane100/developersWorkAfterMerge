@@ -5,6 +5,238 @@ import Image from "next/image";
 import Link from "next/link";
 import { supabase } from "@/utils/supabase/client";
 
+// Smart Location Search Component
+const SmartLocationSearch = ({ value, onChange, placeholder = "Enter location..." }) => {
+  const [searchTerm, setSearchTerm] = useState(value || '');
+  const [filteredLocations, setFilteredLocations] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const searchRef = useRef(null);
+  const dropdownRef = useRef(null);
+
+  // Sample locations with common misspellings - replace this with your actual JSON data
+  const locations = [
+    "Kathmandu", "Kirtipur", "Kalanki", "Koteshwor", "Kapan", "Kamalpokhari",
+    "Lalitpur", "Lagankhel", "Lubhu", "Lokanthali",
+    "Bhaktapur", "Banepa", "Balaju", "Baneshwor", "Budhanilkantha", "Basundhara",
+    "Pokhara", "Patan", "Pulchowk", "Panipokhari",
+    "Thamel", "Tripureshwor", "Tokha", "Thankot",
+    "Swayambhu", "Sankhamul", "Sanepa", "Sinamangal",
+    "Maharajgunj", "Maitidevi", "Mitrapark",
+    "New Baneshwor", "Naxal", "New Road", "Naya Bazaar",
+    "Chabahil", "Chhetrapati", "Chapagaun", "Chandragiri",
+    "Dillibazar", "Dhulikhel", "Dhapasi", "Dhobighat",
+    "Gongabu", "Gwarko", "Godawari", "Greenland",
+    "Hattisar", "Hattiban", "Harisiddhi",
+    "Imadol", "Itahari",
+    "Jawalakhel", "Jhamsikhel", "Jorpati",
+    "Kalimati", "Kumaripati", "Kupondole",
+    "Ring Road", "Ratnapark", "Ramshah Path",
+    "Samakhusi", "Sitapaila", "Shankharapur",
+    "Tahachal", "Tinkune", "Thapathali",
+    "Uttardhoka", "Urlabari",
+    "VDC", "Valley",
+    "Waling", "Ward",
+    "Yala", "Yakkha"
+  ];
+
+  // Common misspellings mapping
+  const misspellingMap = {
+    'kriti': 'kirtipur',
+    'kritipur': 'kirtipur',
+    'kathamndu': 'kathmandu', 
+    'katmandu': 'kathmandu',
+    'lalitpur': 'lalitpur',
+    'lalitapur': 'lalitpur',
+    'bhaktpur': 'bhaktapur',
+    'bhaktapur': 'bhaktapur'
+  };
+
+  // Enhanced fuzzy search function
+  const fuzzySearch = (searchTerm, locations) => {
+    const searchLower = searchTerm.toLowerCase().trim();
+    
+    // First check if search term matches any misspelling
+    const correctedTerm = misspellingMap[searchLower] || searchLower;
+    
+    // Filter locations with multiple matching strategies
+    const results = locations.filter(location => {
+      const locationLower = location.toLowerCase();
+      
+      // Strategy 1: Exact start match (highest priority)
+      if (locationLower.startsWith(searchLower)) return true;
+      if (locationLower.startsWith(correctedTerm)) return true;
+      
+      // Strategy 2: Contains the search term
+      if (locationLower.includes(searchLower)) return true;
+      if (locationLower.includes(correctedTerm)) return true;
+      
+      // Strategy 3: Fuzzy match for common typos (simple character swaps)
+      if (searchTerm.length >= 3) {
+        // Check for adjacent character swaps (like "kriti" vs "kirti")
+        for (let i = 0; i < searchTerm.length - 1; i++) {
+          const swapped = searchTerm.slice(0, i) + 
+                         searchTerm[i + 1] + 
+                         searchTerm[i] + 
+                         searchTerm.slice(i + 2);
+          if (locationLower.includes(swapped.toLowerCase())) return true;
+        }
+      }
+      
+      return false;
+    });
+    
+    // Sort results: exact matches first, then starts-with, then contains
+    return results.sort((a, b) => {
+      const aLower = a.toLowerCase();
+      const bLower = b.toLowerCase();
+      
+      // Exact start matches first
+      const aStartsExact = aLower.startsWith(searchLower);
+      const bStartsExact = bLower.startsWith(searchLower);
+      if (aStartsExact && !bStartsExact) return -1;
+      if (!aStartsExact && bStartsExact) return 1;
+      
+      // Then corrected term matches
+      const aStartsCorrected = aLower.startsWith(correctedTerm);
+      const bStartsCorrected = bLower.startsWith(correctedTerm);
+      if (aStartsCorrected && !bStartsCorrected) return -1;
+      if (!aStartsCorrected && bStartsCorrected) return 1;
+      
+      // Then alphabetical
+      return a.localeCompare(b);
+    });
+  };
+
+  // Filter locations based on search term
+  useEffect(() => {
+    if (!searchTerm || searchTerm.trim() === '') {
+      setFilteredLocations([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    // Use enhanced fuzzy search
+    const filtered = fuzzySearch(searchTerm, locations).slice(0, 10);
+    
+    console.log('Search term:', searchTerm);
+    console.log('Filtered results:', filtered);
+    
+    setFilteredLocations(filtered);
+    // Show dropdown only if focused and has results
+    setShowDropdown(isFocused && filtered.length > 0);
+  }, [searchTerm, isFocused]);
+
+  // Handle input change
+  const handleInputChange = (e) => {
+    const newValue = e.target.value;
+    setSearchTerm(newValue);
+    onChange(newValue);
+  };
+
+  // Handle location selection
+  const handleLocationSelect = (location) => {
+    setSearchTerm(location);
+    setShowDropdown(false);
+    setIsFocused(false);
+    onChange(location);
+    if (searchRef.current) {
+      searchRef.current.blur();
+    }
+  };
+
+  // Handle focus
+  const handleFocus = () => {
+    setIsFocused(true);
+    if (searchTerm && filteredLocations.length > 0) {
+      setShowDropdown(true);
+    }
+  };
+
+  // Handle blur
+  const handleBlur = (e) => {
+    // Use setTimeout to allow click events on dropdown items to fire first
+    setTimeout(() => {
+      if (!dropdownRef.current?.contains(document.activeElement)) {
+        setIsFocused(false);
+        setShowDropdown(false);
+      }
+    }, 100);
+  };
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+        setIsFocused(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <input
+        ref={searchRef}
+        type="text"
+        placeholder={placeholder}
+        value={searchTerm}
+        onChange={handleInputChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+        autoComplete="off"
+      />
+      
+      {showDropdown && (
+        <div className="absolute z-[9999] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+          {filteredLocations.length > 0 ? (
+            <>
+              {filteredLocations.map((location, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleLocationSelect(location)}
+                  onMouseDown={(e) => e.preventDefault()} // Prevent blur when clicking
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 hover:text-blue-700 transition-colors border-b border-gray-100 last:border-b-0 flex items-center gap-2 cursor-pointer"
+                >
+                  <svg className="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="truncate">
+                    {location}
+                    {/* Show hint if it's a fuzzy match */}
+                    {searchTerm.toLowerCase() !== location.toLowerCase().substring(0, searchTerm.length) && 
+                     !location.toLowerCase().startsWith(searchTerm.toLowerCase()) && (
+                      <span className="text-xs text-gray-400 ml-1">
+                        (similar to "{searchTerm}")
+                      </span>
+                    )}
+                  </span>
+                </button>
+              ))}
+              {locations.filter(loc => 
+                loc.toLowerCase().includes(searchTerm.toLowerCase())
+              ).length > 10 && (
+                <div className="px-3 py-2 text-xs text-gray-500 bg-gray-50 border-t">
+                  Showing top 10 results. Keep typing to narrow down...
+                </div>
+              )}
+            </>
+          ) : searchTerm && (
+            <div className="px-3 py-2 text-sm text-gray-500">
+              No locations found for "{searchTerm}"
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 import {
   HomeIcon,
   MapPinIcon,
@@ -144,7 +376,7 @@ function Listing({
   const [bathRoomsCount, setBathRoomsCountLocal] = useState(0);
   const [parkingCount, setParkingCount] = useState(0);
   const [priceRange, setPriceRange] = useState(null);
-  const [area, setArea] = useState(null);
+  const [locationFilter, setLocationFilter] = useState('');
   const [isFilterApplied, setIsFilterApplied] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(9);
@@ -152,17 +384,34 @@ function Listing({
   const [showListingFilters, setShowListingFilters] = useState(false);
   const [viewFilter, setViewFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true); // New state for initial page load
   
-  // Filter states for listing section
+  // Filter states for listing section with new property-specific fields
   const [tempFilters, setTempFilters] = useState({
     minPrice: '',
     maxPrice: '',
-    minArea: '',
-    maxArea: '',
     rooms: 0,
     bathrooms: 0,
     parking: 0,
-    propertyType: 'All'
+    propertyType: 'All',
+    sortBy: 'newest',
+    location: '',
+    // Room/Flat specific
+    roomType: '',
+    hasParking: false,
+    waterType: '',
+    // House specific
+    houseFacing: '',
+    houseRoadType: '',
+    houseHasParking: false,
+    houseArea: '',
+    // Land specific
+    landArea: '',
+    landRoadType: '',
+    // Shop specific
+    shopArea: '',
+    shopHasParking: false,
+    shopRoadType: ''
   });
   
   // Store ALL fetched data from address search
@@ -171,45 +420,136 @@ function Listing({
   
   const listingsContainerRef = useRef(null);
 
-  // Filter logic based on search state
+  // Get relevant filters based on property type
+  const getRelevantFilters = (propType) => {
+    const baseFilters = {
+      showPrice: true,
+      showArea: true,
+      showPropertyType: true
+    };
+
+    switch (propType) {
+      case 'House':
+        return {
+          ...baseFilters,
+          showRooms: true,
+          showBathrooms: true,
+          showParking: true,
+          showFacing: true,
+          showRoadType: true,
+          showCustomArea: true
+        };
+      case 'Room/Flat':
+        return {
+          ...baseFilters,
+          showRooms: false,
+          showBathrooms: false,
+          showParking: false,
+          showRoomType: true,
+          showParkingToggle: true,
+          showWaterType: true
+        };
+      case 'Land':
+        return {
+          ...baseFilters,
+          showRooms: false,
+          showBathrooms: false,
+          showParking: false,
+          showCustomArea: true,
+          showRoadType: true
+        };
+      case 'Shop':
+        return {
+          ...baseFilters,
+          showRooms: false,
+          showBathrooms: false,
+          showParking: false,
+          showCustomArea: true,
+          showParkingToggle: true,
+          showRoadType: true
+        };
+      default: // 'All' or any other type
+        return {
+          ...baseFilters,
+          showRooms: true,
+          showBathrooms: true,
+          showParking: true
+        };
+    }
+  };
+
+  const relevantFilters = getRelevantFilters(tempFilters.propertyType);
+
+  // Simple filtering - NO memoization, always fresh logic
   const getFilteredListings = () => {
-    // If search was performed, use address-based data
-    if (isSearchPerformed && allAddressData.length > 0) {
-      let filteredData = [...allAddressData];
-      
-      // Apply property type filter
-      if (propertyType && propertyType !== "All") {
-        filteredData = filteredData.filter(item => item.propertyType === propertyType);
-      }
-      
-      // Apply additional filters
-      if (roomsCount > 0) {
-        filteredData = filteredData.filter(item => (item.rooms || 0) >= roomsCount);
-      }
-      if (bathRoomsCount > 0) {
-        filteredData = filteredData.filter(item => (item.bathrooms || 0) >= bathRoomsCount);
-      }
-      if (parkingCount > 0) {
-        filteredData = filteredData.filter(item => (item.parking || 0) >= parkingCount);
-      }
-      if (priceRange?.length === 2) {
-        filteredData = filteredData.filter(item => {
-          const price = parseFloat(item.price) || 0;
-          return price >= priceRange[0] && price <= priceRange[1];
-        });
-      }
-      if (area?.length === 2) {
-        filteredData = filteredData.filter(item => {
-          const itemArea = parseFloat(item.area) || 0;
-          return itemArea >= area[0] && itemArea <= area[1];
-        });
-      }
-      
-      return filteredData;
+    let filteredData = [];
+    
+    // SIMPLE LOGIC: Location search vs General search
+    if (isSearchPerformed && searchAddress && allAddressData.length > 0) {
+      // This is a LOCATION search - use location data
+      console.log("📍 Using LOCATION data from:", searchAddress, "Count:", allAddressData.length);
+      filteredData = [...allAddressData];
+    } else {
+      // This is a GENERAL search (no location) - use fresh backend data
+      console.log("🏠 Using GENERAL data from backend. Count:", (listing || []).length + (secondaryListings || []).length);
+      filteredData = [...(listing || []), ...(secondaryListings || [])];
     }
     
-    // If no search performed, use default listings
-    return [...(listing || []), ...(secondaryListings || [])];
+    console.log("📊 Base data before filtering:", filteredData.length);
+
+    // Apply additional filters only if they have values
+    if (locationFilter && locationFilter.trim()) {
+      console.log("📍 Applying additional location filter:", locationFilter);
+      filteredData = filteredData.filter(item => 
+        item.address?.toLowerCase().includes(locationFilter.toLowerCase()) ||
+        item.full_address?.toLowerCase().includes(locationFilter.toLowerCase())
+      );
+    }
+    
+    if (roomsCount > 0) {
+      filteredData = filteredData.filter(item => (item.rooms || 0) >= roomsCount);
+    }
+    if (bathRoomsCount > 0) {
+      filteredData = filteredData.filter(item => (item.bathrooms || 0) >= bathRoomsCount);
+    }
+    if (parkingCount > 0) {
+      filteredData = filteredData.filter(item => (item.parking || 0) >= parkingCount);
+    }
+    
+    // Price range filter
+    if (priceRange?.length === 2 && (priceRange[0] > 0 || priceRange[1] < Infinity)) {
+      filteredData = filteredData.filter(item => {
+        const price = parseFloat(item.price) || 0;
+        return price >= priceRange[0] && price <= priceRange[1];
+      });
+    }
+    
+    // Apply sorting
+    const sortBy = tempFilters.sortBy || 'newest';
+    switch (sortBy) {
+      case 'price-low':
+        filteredData.sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
+        break;
+      case 'price-high':
+        filteredData.sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
+        break;
+      case 'area-large':
+        filteredData.sort((a, b) => (parseFloat(b.area) || 0) - (parseFloat(a.area) || 0));
+        break;
+      case 'area-small':
+        filteredData.sort((a, b) => (parseFloat(a.area) || 0) - (parseFloat(b.area) || 0));
+        break;
+      case 'oldest':
+        filteredData.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        break;
+      case 'newest':
+      default:
+        filteredData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        break;
+    }
+    
+    console.log("📊 Final filtered data count:", filteredData.length);
+    return filteredData;
   };
 
   // Filter by view tabs (all/sale/rent)
@@ -238,32 +578,77 @@ function Listing({
     );
   };
 
-  // Fetch ALL data from address, no action filtering
+  // Fetch data - ALWAYS fetch fresh from backend
   const handleSearch = async () => {
-    console.log("🔍 Starting address-based search...");
-    
-    if (!address?.label) {
-      console.log("❌ No address provided");
-      return;
-    }
+    console.log("🔍 === STARTING FRESH SEARCH ===");
+    console.log("📍 Address object:", address);
+    console.log("📍 Address label:", address?.label);
+    console.log("🏠 Property Type:", propertyType);
+    console.log("🏷️ Current Action:", currentAction);
 
     setIsLoading(true);
-    setIsSearchPerformed(true);
     setCurrentPage(1);
     scrollToListing();
 
-    try {
-      const searchLocation = address.label.split(",")[0]?.trim();
-      console.log("🔍 Searching for address:", searchLocation);
+    // ALWAYS clear ALL old data first - complete reset
+    console.log("🧹 CLEARING ALL OLD DATA");
+    setAllAddressData([]);
+    setSearchAddress(null);
+    setIsSearchPerformed(false);
 
-      // Fetch ALL properties from this address (no action filter)
+    try {
+      // Build fresh query
       let query = supabase
         .from("listing")
         .select("*, listingImages(url, listing_id)")
         .eq("active", true)
-        .ilike("address", `%${searchLocation}%`)
         .order("created_at", { ascending: false });
 
+      // Check for location - be very strict about what counts as a location
+      const hasLocation = address && 
+                         address.label && 
+                         typeof address.label === 'string' && 
+                         address.label.trim() !== '' && 
+                         address.label.trim().length > 0;
+
+      console.log("🔍 Has valid location?", hasLocation);
+
+      if (hasLocation) {
+        // LOCATION-BASED SEARCH
+        const searchLocation = address.label.split(",")[0]?.trim();
+        console.log("🔍 === LOCATION SEARCH ===");
+        console.log("📍 Searching in location:", searchLocation);
+        
+        query = query.ilike("address", `%${searchLocation}%`);
+        
+        // Set location search state
+        setIsSearchPerformed(true);
+        setSearchAddress(searchLocation);
+        
+        // Smart tab selection for location searches
+        if (currentAction === "Sell") {
+          setViewFilter("sale");
+        } else if (currentAction === "Rent") {
+          setViewFilter("rent");
+        }
+      } else {
+        // NO LOCATION - PROPERTY TYPE SEARCH
+        console.log("🔍 === NO LOCATION - PROPERTY TYPE SEARCH ===");
+        console.log("🏠 Searching for property type:", propertyType);
+        
+        // Keep search state as false for property type searches
+        setIsSearchPerformed(false);
+        setSearchAddress(null);
+      }
+
+      // Add property type filter if not "All"
+      if (propertyType && propertyType !== "All") {
+        console.log("🏠 Adding property type filter:", propertyType);
+        query = query.eq("propertyType", propertyType);
+      }
+
+      // EXECUTE THE QUERY
+      console.log("⚡ Executing Supabase query...");
       const { data, error } = await query;
 
       if (error) {
@@ -271,52 +656,71 @@ function Listing({
         throw error;
       }
 
-      console.log(`✅ Found ${data?.length || 0} total properties in ${searchLocation}`);
-      console.log("📋 All fetched data:", data);
+      console.log(`✅ SUCCESS - Found ${data?.length || 0} properties`);
+      console.log("📊 Query results:", data);
 
-      // Store ALL data from this address
-      setAllAddressData(data || []);
-      setSearchAddress(searchLocation);
-      
-      // Notify parent component about address data update
-      if (onAddressDataUpdate && typeof onAddressDataUpdate === 'function') {
+      // Store the results based on search type
+      if (hasLocation) {
+        // Location search - store in allAddressData
+        console.log("💾 Storing as LOCATION data");
+        setAllAddressData(data || []);
+        
+        // Clear parent state for location searches
+        if (setListing) setListing([]);
+        if (setSecondaryListings) setSecondaryListings([]);
+      } else {
+        // Property type search - store in parent state
+        console.log("💾 Storing as PROPERTY TYPE data");
+        setAllAddressData([]); // Keep empty for property type searches
+        
+        // Update parent state with fresh property type data
+        if (setListing) setListing(data || []);
+        if (setSecondaryListings) setSecondaryListings([]);
+      }
+
+      // Notify parent
+      if (onAddressDataUpdate) {
         onAddressDataUpdate(data || []);
       }
-      
-      // Clear parent state since we're now using allAddressData
-      if (setListing && typeof setListing === 'function') {
-        setListing([]);
-      }
-      if (setSecondaryListings && typeof setSecondaryListings === 'function') {
-        setSecondaryListings([]);
-      }
 
-      // If no results in specific location, try Kathmandu
-      if (!data || data.length === 0) {
-        console.log("🔍 No results found, trying Kathmandu...");
+      // Fallback only for location searches with no results
+      if (hasLocation && (!data || data.length === 0)) {
+        console.log("🔍 Location search failed, trying Kathmandu fallback...");
         
-        const { data: kathmanduData, error: kathmanduError } = await supabase
+        let fallbackQuery = supabase
           .from("listing")
           .select("*, listingImages(url, listing_id)")
           .eq("active", true)
           .ilike("address", "%kathmandu%")
           .order("created_at", { ascending: false });
 
-        if (!kathmanduError && kathmanduData?.length > 0) {
-          setAllAddressData(kathmanduData);
+        if (propertyType && propertyType !== "All") {
+          fallbackQuery = fallbackQuery.eq("propertyType", propertyType);
+        }
+
+        const { data: fallbackData, error: fallbackError } = await fallbackQuery;
+
+        if (!fallbackError && fallbackData?.length > 0) {
+          setAllAddressData(fallbackData);
           setSearchAddress("Kathmandu");
-          if (onAddressDataUpdate && typeof onAddressDataUpdate === 'function') {
-            onAddressDataUpdate(kathmanduData);
+          if (onAddressDataUpdate) {
+            onAddressDataUpdate(fallbackData);
           }
-          console.log(`✅ Found ${kathmanduData.length} properties in Kathmandu`);
+          console.log(`✅ Fallback success: ${fallbackData.length} properties in Kathmandu`);
         }
       }
 
     } catch (err) {
       console.error("🚨 Search error:", err);
+      // Complete cleanup on error
       setAllAddressData([]);
+      setSearchAddress(null);
+      setIsSearchPerformed(false);
+      if (setListing) setListing([]);
+      if (setSecondaryListings) setSecondaryListings([]);
     } finally {
       setIsLoading(false);
+      console.log("🔍 === SEARCH COMPLETE ===");
     }
   };
 
@@ -390,15 +794,30 @@ function Listing({
     });
   };
 
-  // Count active filters
+  // Count active filters (only count relevant ones for the property type)
   const getActiveFiltersCount = () => {
     let count = 0;
+    const relevant = getRelevantFilters(tempFilters.propertyType);
+    
+    // Always count price, location and property type if set
     if (tempFilters.minPrice || tempFilters.maxPrice) count++;
-    if (tempFilters.minArea || tempFilters.maxArea) count++;
-    if (tempFilters.rooms > 0) count++;
-    if (tempFilters.bathrooms > 0) count++;
-    if (tempFilters.parking > 0) count++;
+    if (tempFilters.location && tempFilters.location.trim()) count++;
     if (tempFilters.propertyType !== 'All') count++;
+    if (tempFilters.sortBy && tempFilters.sortBy !== 'newest') count++;
+    
+    // Only count relevant filters
+    if (relevant.showRooms && tempFilters.rooms > 0) count++;
+    if (relevant.showBathrooms && tempFilters.bathrooms > 0) count++;
+    if (relevant.showParking && tempFilters.parking > 0) count++;
+    
+    // Property-specific filters
+    if (relevant.showRoomType && tempFilters.roomType) count++;
+    if (relevant.showParkingToggle && tempFilters.hasParking) count++;
+    if (relevant.showWaterType && tempFilters.waterType) count++;
+    if (relevant.showFacing && tempFilters.houseFacing) count++;
+    if (relevant.showRoadType && (tempFilters.houseRoadType || tempFilters.landRoadType || tempFilters.shopRoadType)) count++;
+    if (relevant.showCustomArea && (tempFilters.houseArea || tempFilters.landArea || tempFilters.shopArea)) count++;
+    
     return count;
   };
 
@@ -410,6 +829,7 @@ function Listing({
     setBathRoomsCountLocal(tempFilters.bathrooms);
     setParkingCount(tempFilters.parking);
     setPropertyType(tempFilters.propertyType);
+    setLocationFilter(tempFilters.location || '');
     
     // Set price range
     if (tempFilters.minPrice || tempFilters.maxPrice) {
@@ -421,49 +841,81 @@ function Listing({
       setPriceRange(null);
     }
 
-    // Set area range
-    if (tempFilters.minArea || tempFilters.maxArea) {
-      setArea([
-        tempFilters.minArea ? parseInt(tempFilters.minArea) : 0,
-        tempFilters.maxArea ? parseInt(tempFilters.maxArea) : Infinity
-      ]);
-    } else {
-      setArea(null);
-    }
-
     setIsFilterApplied(true);
     setShowListingFilters(false);
     setCurrentPage(1);
   };
 
   const handleClearFilters = () => {
+    const currentPropertyType = tempFilters.propertyType;
+    
     setTempFilters({
       minPrice: '',
       maxPrice: '',
-      minArea: '',
-      maxArea: '',
       rooms: 0,
       bathrooms: 0,
       parking: 0,
-      propertyType: 'All'
+      propertyType: currentPropertyType,
+      sortBy: 'newest',
+      location: '',
+      // Room/Flat specific
+      roomType: '',
+      hasParking: false,
+      waterType: '',
+      // House specific
+      houseFacing: '',
+      houseRoadType: '',
+      houseHasParking: false,
+      houseArea: '',
+      // Land specific
+      landArea: '',
+      landRoadType: '',
+      // Shop specific
+      shopArea: '',
+      shopHasParking: false,
+      shopRoadType: ''
     });
     
+    // Only reset filters that are relevant to current property type
     setRoomsCount(0);
     setBathRoomsCountLocal(0);
     setParkingCount(0);
     setPriceRange(null);
-    setArea(null);
-    setPropertyType('All');
+    setLocationFilter('');
     setIsFilterApplied(false);
     setCurrentPage(1);
   };
 
   const propertyTypes = ['All', 'Room/Flat', 'House', 'Land', 'Shop'];
 
+  // Watch for address changes and reset search state when cleared
+  useEffect(() => {
+    const hasLocation = address && 
+                       address.label && 
+                       typeof address.label === 'string' && 
+                       address.label.trim() !== '' && 
+                       address.label.trim().length > 0;
+    
+    if (!hasLocation) {
+      console.log("🧹 Location cleared/empty - resetting location search state");
+      setIsSearchPerformed(false);
+      setSearchAddress(null);
+      setAllAddressData([]);
+    }
+  }, [address]);
+
+  // Reset to "All Properties" tab when no search is performed
+  useEffect(() => {
+    // If no search has been performed and no address data, default to "all" tab
+    if (!isSearchPerformed && allAddressData.length === 0) {
+      setViewFilter("all");
+    }
+  }, [isSearchPerformed, allAddressData.length]);
+
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [viewFilter, propertyType, roomsCount, bathRoomsCount, parkingCount, priceRange, area]);
+  }, [viewFilter, propertyType, roomsCount, bathRoomsCount, parkingCount, priceRange, locationFilter]);
 
   // Get counts for each tab
   const getTabCounts = () => {
@@ -474,6 +926,59 @@ function Listing({
       rent: filteredData.filter(item => item.action === "Rent").length
     };
   };
+
+  const tabCounts = getTabCounts();
+
+  // Fetch all properties on initial page load
+  const fetchInitialData = async () => {
+    console.log("🚀 === INITIAL PAGE LOAD - FETCHING ALL PROPERTIES ===");
+    setIsInitialLoading(true);
+    
+    try {
+      const query = supabase
+        .from("listing")
+        .select("*, listingImages(url, listing_id)")
+        .eq("active", true)
+        .order("created_at", { ascending: false });
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error("❌ Initial data fetch failed:", error);
+        throw error;
+      }
+
+      console.log(`✅ INITIAL LOAD - Found ${data?.length || 0} total properties`);
+
+      // Store in parent state for default display
+      if (setListing) setListing(data || []);
+      if (setSecondaryListings) setSecondaryListings([]);
+      
+      // Notify parent
+      if (onAddressDataUpdate) {
+        onAddressDataUpdate(data || []);
+      }
+
+      // Ensure we start with clean state
+      setAllAddressData([]);
+      setSearchAddress(null);
+      setIsSearchPerformed(false);
+      setViewFilter("all");
+
+    } catch (err) {
+      console.error("🚨 Initial data fetch error:", err);
+      if (setListing) setListing([]);
+      if (setSecondaryListings) setSecondaryListings([]);
+    } finally {
+      setIsInitialLoading(false);
+      console.log("🚀 === INITIAL LOAD COMPLETE ===");
+    }
+  };
+
+  // Load all properties when component mounts
+  useEffect(() => {
+    fetchInitialData();
+  }, []); // Empty dependency array - runs only once on mount
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -547,9 +1052,13 @@ function Listing({
                 <div className="bg-white rounded-lg">
                   <OpenStreetMapSearch
                     selectedAddress={(v) => {
+                      console.log("📍 Location selected/changed:", v);
                       searchedAddress(v);
                       setAddress(v);
+                      // Always reset search state when location changes
                       setIsSearchPerformed(false);
+                      setAllAddressData([]);
+                      setSearchAddress(null);
                     }}
                     setCoordinates={setCoordinates}
                   />
@@ -597,18 +1106,34 @@ function Listing({
             <button
               className="w-full bg-green-700 hover:bg-green-800 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold text-xl p-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
               onClick={handleSearch}
-              disabled={isLoading}
+              disabled={isLoading || isInitialLoading}
             >
               <div className="flex items-center justify-center gap-2">
-                {isLoading ? (
+                {(isLoading || isInitialLoading) ? (
                   <>
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                    <span>Searching...</span>
+                    <span>{isInitialLoading ? "Loading..." : "Searching..."}</span>
                   </>
                 ) : (
                   <>
                     <MagnifyingGlassIcon className="h-6 w-6" />
-                    <span>Search Properties</span>
+                    <span>
+                      {(() => {
+                        const hasLocation = address && 
+                                           address.label && 
+                                           typeof address.label === 'string' && 
+                                           address.label.trim() !== '' && 
+                                           address.label.trim().length > 0;
+                        
+                        if (hasLocation) {
+                          return "Search Properties";
+                        } else if (propertyType !== "All") {
+                          return `Find All ${propertyType} Properties`;
+                        } else {
+                          return "Find All Properties";
+                        }
+                      })()}
+                    </span>
                   </>
                 )}
               </div>
@@ -619,6 +1144,60 @@ function Listing({
 
       {/* Listings Section */}
       <div className="bg-white py-10" ref={listingsContainerRef}>
+        {/* Full Screen Loading Overlay */}
+        {(isLoading || isInitialLoading) && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-8 max-w-sm mx-4 text-center shadow-2xl">
+              <div className="flex flex-col items-center space-y-4">
+                {/* Animated Loading Spinner */}
+                <div className="relative">
+                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                </div>
+                
+                {/* Loading Text */}
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {isInitialLoading ? "Loading Properties..." : 
+                     address?.label && address.label.trim() 
+                      ? "Searching Properties..." 
+                      : "Finding Properties..."
+                    }
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {isInitialLoading ? "Fetching all available properties from database" :
+                     address?.label && address.label.trim() ? 
+                      `Finding properties in ${address.label.split(",")[0]?.trim()}` :
+                      propertyType !== "All" ?
+                      `Finding all ${propertyType} properties` :
+                      "Fetching available properties"
+                    }
+                  </p>
+                  <div className="flex items-center justify-center space-x-1 text-blue-600">
+                    <div className="animate-bounce">.</div>
+                    <div className="animate-bounce" style={{ animationDelay: '0.1s' }}>.</div>
+                    <div className="animate-bounce" style={{ animationDelay: '0.2s' }}>.</div>
+                  </div>
+                </div>
+
+                {/* Search Action Indicator */}
+                <div className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                  {isInitialLoading ? "🏢 Loading all property listings" :
+                   address?.label && address.label.trim() ? (
+                    currentAction === "Sell" ? "🏠 Looking for properties to buy" : "🏘️ Looking for properties to rent"
+                  ) : (
+                    propertyType !== "All" ? `🔍 Searching all ${propertyType} properties` : "🔍 Searching all properties"
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="container mx-auto px-4">
           {/* Search Results Summary */}
           {isSearchPerformed && searchAddress && (
@@ -628,12 +1207,60 @@ function Listing({
                 <h2 className="font-medium">
                   Found{" "}
                   <span className="font-bold">{allAddressData.length}</span>{" "}
-                  Total Properties in{" "}
+                  Properties in{" "}
                   <span className="font-bold">{searchAddress}</span>
                   {propertyType !== "All" && (
-                    <span> • Filtered by: {propertyType}</span>
+                    <span> • Type: {propertyType}</span>
                   )}
+                  {/* Show which search action was performed */}
+                  <span className="text-sm ml-2 px-2 py-1 bg-blue-100 rounded-md">
+                    Searched for: {currentAction === "Sell" ? "Properties to Buy" : "Properties to Rent"}
+                  </span>
                 </h2>
+              </div>
+              {/* Show current active tab hint */}
+              <div className="mt-2 text-sm text-blue-600">
+                💡 Active tab automatically set to: <span className="font-semibold">
+                  {viewFilter === "sale" ? "For Sale" : viewFilter === "rent" ? "For Rent" : "All Properties"}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Property Type Search Summary (when no location) */}
+          {!isSearchPerformed && !searchAddress && propertyType !== "All" && !isInitialLoading && (listing || []).length > 0 && (
+            <div className="mb-8 bg-green-50 border border-green-100 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-green-800">
+                <BuildingOfficeIcon className="h-5 w-5 flex-shrink-0" />
+                <h2 className="font-medium">
+                  Showing All{" "}
+                  <span className="font-bold">{propertyType}</span>{" "}
+                  Properties
+                  <span className="text-sm ml-2 px-2 py-1 bg-green-100 rounded-md">
+                    {(listing || []).length + (secondaryListings || []).length} total found
+                  </span>
+                </h2>
+              </div>
+              <div className="mt-2 text-sm text-green-600">
+                💡 Search results from entire database • To search by location, enter an address above
+              </div>
+            </div>
+          )}
+
+          {/* All Properties Summary (when no filters) */}
+          {!isSearchPerformed && !searchAddress && propertyType === "All" && !isInitialLoading && (listing || []).length > 0 && (
+            <div className="mb-8 bg-gray-50 border border-gray-100 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-gray-800">
+                <BuildingOfficeIcon className="h-5 w-5 flex-shrink-0" />
+                <h2 className="font-medium">
+                  Showing All Available Properties
+                  <span className="text-sm ml-2 px-2 py-1 bg-gray-100 rounded-md">
+                    {(listing || []).length + (secondaryListings || []).length} total properties
+                  </span>
+                </h2>
+              </div>
+              <div className="mt-2 text-sm text-gray-600">
+                💡 Browse all properties from database • Select a property type or location to filter results
               </div>
             </div>
           )}
@@ -701,6 +1328,13 @@ function Listing({
                 </span>
               )}
 
+              {/* Location filter from filter panel */}
+              {locationFilter && locationFilter.trim() && (
+                <span className="bg-purple-50 text-purple-800 px-2 py-1 rounded-md text-xs">
+                  📍 {locationFilter}
+                </span>
+              )}
+
               {viewFilter !== "all" && (
                 <span
                   className={`px-2 py-1 rounded-md ${
@@ -713,33 +1347,51 @@ function Listing({
                 </span>
               )}
 
-              {roomsCount > 0 && (
+              {/* Only show relevant filters based on property type */}
+              {getRelevantFilters(propertyType).showRooms && roomsCount > 0 && (
                 <span className="bg-yellow-50 text-yellow-800 px-2 py-1 rounded-md text-xs">
                   {roomsCount}+ rooms
                 </span>
               )}
 
-              {bathRoomsCount > 0 && (
+              {getRelevantFilters(propertyType).showBathrooms && bathRoomsCount > 0 && (
                 <span className="bg-cyan-50 text-cyan-800 px-2 py-1 rounded-md text-xs">
                   {bathRoomsCount}+ baths
                 </span>
               )}
 
-              {parkingCount > 0 && (
+              {getRelevantFilters(propertyType).showParking && parkingCount > 0 && (
                 <span className="bg-orange-50 text-orange-800 px-2 py-1 rounded-md text-xs">
                   {parkingCount}+ parking
                 </span>
               )}
 
-              {priceRange && (
+              {priceRange && (priceRange[0] > 0 || priceRange[1] < Infinity) && (
                 <span className="bg-emerald-50 text-emerald-800 px-2 py-1 rounded-md text-xs">
                   Rs {priceRange[0]?.toLocaleString()} - Rs {priceRange[1] === Infinity ? '∞' : priceRange[1]?.toLocaleString()}
                 </span>
               )}
 
-              {area && (
-                <span className="bg-indigo-50 text-indigo-800 px-2 py-1 rounded-md text-xs">
-                  {area[0]} - {area[1] === Infinity ? '∞' : area[1]} sq ft
+              {/* Sort filter */}
+              {tempFilters.sortBy && tempFilters.sortBy !== 'newest' && (
+                <span className="bg-gray-50 text-gray-800 px-2 py-1 rounded-md text-xs">
+                  Sort: {tempFilters.sortBy === 'price-low' ? 'Price Low-High' : 
+                         tempFilters.sortBy === 'price-high' ? 'Price High-Low' :
+                         tempFilters.sortBy === 'area-large' ? 'Area Large-Small' :
+                         tempFilters.sortBy === 'area-small' ? 'Area Small-Large' :
+                         tempFilters.sortBy === 'oldest' ? 'Oldest First' : tempFilters.sortBy}
+                </span>
+              )}
+              
+              {/* Property type specific hint */}
+              {propertyType === 'Land' && (
+                <span className="bg-gray-50 text-gray-600 px-2 py-1 rounded-md text-xs italic">
+                  Land properties only
+                </span>
+              )}
+              {propertyType === 'Shop' && (
+                <span className="bg-gray-50 text-gray-600 px-2 py-1 rounded-md text-xs italic">
+                  Commercial properties
                 </span>
               )}
             </div>
@@ -793,64 +1445,31 @@ function Listing({
                 </h3>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Price Range */}
-                <div className="space-y-3">
-                  <label className="flex items-center text-sm font-medium text-gray-700 gap-2">
-                    <CurrencyDollarIcon className="h-4 w-4 text-green-600" />
-                    Price Range
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      placeholder="Min Price"
-                      value={tempFilters.minPrice}
-                      onChange={(e) => setTempFilters(prev => ({ ...prev, minPrice: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Max Price"
-                      value={tempFilters.maxPrice}
-                      onChange={(e) => setTempFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                    />
-                  </div>
-                </div>
-
-                {/* Area Range */}
-                <div className="space-y-3">
-                  <label className="flex items-center text-sm font-medium text-gray-700 gap-2">
-                    <BuildingOfficeIcon className="h-4 w-4 text-blue-600" />
-                    Area (sq ft)
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      placeholder="Min Area"
-                      value={tempFilters.minArea}
-                      onChange={(e) => setTempFilters(prev => ({ ...prev, minArea: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Max Area"
-                      value={tempFilters.maxArea}
-                      onChange={(e) => setTempFilters(prev => ({ ...prev, maxArea: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                    />
-                  </div>
-                </div>
-
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {/* Property Type */}
-                <div className="space-y-3">
-                  <label className="flex items-center text-sm font-medium text-gray-700 gap-2">
-                    <HomeIcon className="h-4 w-4 text-purple-600" />
-                    Property Type
-                  </label>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Property Type</label>
                   <select
                     value={tempFilters.propertyType}
-                    onChange={(e) => setTempFilters(prev => ({ ...prev, propertyType: e.target.value }))}
+                    onChange={(e) => setTempFilters(prev => ({ 
+                      ...prev, 
+                      propertyType: e.target.value,
+                      roomType: '', 
+                      rooms: 0,
+                      bathrooms: 0,
+                      parking: 0,
+                      hasParking: false,
+                      waterType: '',
+                      houseFacing: '',
+                      houseRoadType: '',
+                      houseHasParking: false,
+                      houseArea: '',
+                      landArea: '',
+                      landRoadType: '',
+                      shopArea: '',
+                      shopHasParking: false,
+                      shopRoadType: ''
+                    }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
                   >
                     {propertyTypes.map(type => (
@@ -858,73 +1477,342 @@ function Listing({
                     ))}
                   </select>
                 </div>
+
+                {/* Location Filter with Smart Search */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Location</label>
+                  <SmartLocationSearch
+                    value={tempFilters.location || ''}
+                    onChange={(value) => setTempFilters(prev => ({ ...prev, location: value }))}
+                    placeholder="Search location (e.g., Kathmandu, Lalitpur...)"
+                  />
+                </div>
+
+                {/* Price Range */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Price Range</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      placeholder="Min"
+                      value={tempFilters.minPrice}
+                      onChange={(e) => setTempFilters(prev => ({ ...prev, minPrice: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Max"
+                      value={tempFilters.maxPrice}
+                      onChange={(e) => setTempFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                </div>
+
+                {/* Sort By */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Sort By</label>
+                  <select
+                    value={tempFilters.sortBy}
+                    onChange={(e) => setTempFilters(prev => ({ ...prev, sortBy: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                  >
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="area-large">Area: Large to Small</option>
+                    <option value="area-small">Area: Small to Large</option>
+                  </select>
+                </div>
               </div>
 
-              {/* Features Row */}
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <label className="text-sm font-medium text-gray-700 mb-4 block">Features</label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Bedrooms */}
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm text-gray-700 font-medium">Bedrooms</span>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => setTempFilters(prev => ({ ...prev, rooms: Math.max(0, prev.rooms - 1) }))}
-                        className="w-8 h-8 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 font-medium"
+              {/* Property Type Specific Fields */}
+              {tempFilters.propertyType === 'Room/Flat' && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <h4 className="text-md font-medium text-gray-800 mb-3">Room/Flat Specific Fields</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Room Type */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Room Type</label>
+                      <select
+                        value={tempFilters.roomType || ''}
+                        onChange={(e) => setTempFilters(prev => ({ ...prev, roomType: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
                       >
-                        -
-                      </button>
-                      <span className="w-8 text-center font-semibold text-gray-900">{tempFilters.rooms}</span>
-                      <button
-                        onClick={() => setTempFilters(prev => ({ ...prev, rooms: prev.rooms + 1 }))}
-                        className="w-8 h-8 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 font-medium"
-                      >
-                        +
-                      </button>
+                        <option value="">All Room Types</option>
+                        <option value="Single Room">Single Room</option>
+                        <option value="Double Room">Double Room</option>
+                        <option value="1BHK">1BHK (Bedroom, Hall, Kitchen)</option>
+                        <option value="2BK">2BK (Two Bedrooms, Kitchen)</option>
+                        <option value="2BHK">2BHK (Two Bedrooms, Hall, Kitchen)</option>
+                        <option value="Larger flats">Larger flats</option>
+                      </select>
                     </div>
-                  </div>
 
-                  {/* Bathrooms */}
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm text-gray-700 font-medium">Bathrooms</span>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => setTempFilters(prev => ({ ...prev, bathrooms: Math.max(0, prev.bathrooms - 1) }))}
-                        className="w-8 h-8 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 font-medium"
-                      >
-                        -
-                      </button>
-                      <span className="w-8 text-center font-semibold text-gray-900">{tempFilters.bathrooms}</span>
-                      <button
-                        onClick={() => setTempFilters(prev => ({ ...prev, bathrooms: prev.bathrooms + 1 }))}
-                        className="w-8 h-8 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 font-medium"
-                      >
-                        +
-                      </button>
+                    {/* Parking Toggle */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Parking Available</label>
+                      <div className="flex items-center space-x-3 mt-1">
+                        <button
+                          onClick={() => setTempFilters(prev => ({ ...prev, hasParking: !prev.hasParking }))}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            tempFilters.hasParking ? 'bg-blue-600' : 'bg-gray-200'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              tempFilters.hasParking ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                        <span className="text-sm text-gray-600">
+                          {tempFilters.hasParking ? 'Yes' : 'No'}
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Parking */}
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm text-gray-700 font-medium">Parking Spaces</span>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => setTempFilters(prev => ({ ...prev, parking: Math.max(0, prev.parking - 1) }))}
-                        className="w-8 h-8 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 font-medium"
+                    {/* Water Type */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Water Type</label>
+                      <select
+                        value={tempFilters.waterType || ''}
+                        onChange={(e) => setTempFilters(prev => ({ ...prev, waterType: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
                       >
-                        -
-                      </button>
-                      <span className="w-8 text-center font-semibold text-gray-900">{tempFilters.parking}</span>
-                      <button
-                        onClick={() => setTempFilters(prev => ({ ...prev, parking: prev.parking + 1 }))}
-                        className="w-8 h-8 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 font-medium"
-                      >
-                        +
-                      </button>
+                        <option value="">Any Water Type</option>
+                        <option value="Municipality">Municipality Water</option>
+                        <option value="Borewell">Borewell</option>
+                        <option value="Tank">Tank Water</option>
+                        <option value="Mixed">Mixed Sources</option>
+                      </select>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {/* House Features */}
+              {tempFilters.propertyType === 'House' && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <h4 className="text-md font-medium text-gray-800 mb-3">House Specific Fields</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    {/* Bedrooms */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Bedrooms</label>
+                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                        <span className="text-sm text-gray-600">Min {tempFilters.rooms}</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setTempFilters(prev => ({ ...prev, rooms: Math.max(0, prev.rooms - 1) }))}
+                            className="w-7 h-7 rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 font-medium"
+                          >
+                            -
+                          </button>
+                          <span className="w-6 text-center font-semibold text-gray-900">{tempFilters.rooms}</span>
+                          <button
+                            onClick={() => setTempFilters(prev => ({ ...prev, rooms: prev.rooms + 1 }))}
+                            className="w-7 h-7 rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 font-medium"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bathrooms */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Bathrooms</label>
+                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                        <span className="text-sm text-gray-600">Min {tempFilters.bathrooms}</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setTempFilters(prev => ({ ...prev, bathrooms: Math.max(0, prev.bathrooms - 1) }))}
+                            className="w-7 h-7 rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 font-medium"
+                          >
+                            -
+                          </button>
+                          <span className="w-6 text-center font-semibold text-gray-900">{tempFilters.bathrooms}</span>
+                          <button
+                            onClick={() => setTempFilters(prev => ({ ...prev, bathrooms: prev.bathrooms + 1 }))}
+                            className="w-7 h-7 rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 font-medium"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Parking Toggle */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Parking Available</label>
+                      <div className="flex items-center space-x-3 mt-1">
+                        <button
+                          onClick={() => setTempFilters(prev => ({ ...prev, houseHasParking: !prev.houseHasParking }))}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            tempFilters.houseHasParking ? 'bg-blue-600' : 'bg-gray-200'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              tempFilters.houseHasParking ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                        <span className="text-sm text-gray-600">
+                          {tempFilters.houseHasParking ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Area */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Area (sq ft)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g., 2000"
+                        value={tempFilters.houseArea || ''}
+                        onChange={(e) => setTempFilters(prev => ({ ...prev, houseArea: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      />
+                    </div>
+
+                    {/* Facing */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">House Facing</label>
+                      <select
+                        value={tempFilters.houseFacing || ''}
+                        onChange={(e) => setTempFilters(prev => ({ ...prev, houseFacing: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                      >
+                        <option value="">Any Direction</option>
+                        <option value="North">North</option>
+                        <option value="South">South</option>
+                        <option value="East">East</option>
+                        <option value="West">West</option>
+                        <option value="North-East">North-East</option>
+                        <option value="North-West">North-West</option>
+                        <option value="South-East">South-East</option>
+                        <option value="South-West">South-West</option>
+                      </select>
+                    </div>
+
+                    {/* Road Type */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Road Type</label>
+                      <select
+                        value={tempFilters.houseRoadType || ''}
+                        onChange={(e) => setTempFilters(prev => ({ ...prev, houseRoadType: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                      >
+                        <option value="">Any Road Type</option>
+                        <option value="Pitched Road">Pitched Road</option>
+                        <option value="Graveled Road">Graveled Road</option>
+                        <option value="Dirt Road">Dirt Road</option>
+                        <option value="Main Road">Main Road</option>
+                        <option value="Sub Road">Sub Road</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Land Features */}
+              {tempFilters.propertyType === 'Land' && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <h4 className="text-md font-medium text-gray-800 mb-3">Land Specific Fields</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Area */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Area (sq ft)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g., 5000"
+                        value={tempFilters.landArea || ''}
+                        onChange={(e) => setTempFilters(prev => ({ ...prev, landArea: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      />
+                    </div>
+
+                    {/* Road Type */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Road Type</label>
+                      <select
+                        value={tempFilters.landRoadType || ''}
+                        onChange={(e) => setTempFilters(prev => ({ ...prev, landRoadType: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                      >
+                        <option value="">Any Road Type</option>
+                        <option value="Pitched Road">Pitched Road</option>
+                        <option value="Graveled Road">Graveled Road</option>
+                        <option value="Dirt Road">Dirt Road</option>
+                        <option value="Main Road">Main Road</option>
+                        <option value="Sub Road">Sub Road</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Shop Features */}
+              {tempFilters.propertyType === 'Shop' && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <h4 className="text-md font-medium text-gray-800 mb-3">Shop Specific Fields</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Area */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Area (sq ft)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g., 800"
+                        value={tempFilters.shopArea || ''}
+                        onChange={(e) => setTempFilters(prev => ({ ...prev, shopArea: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      />
+                    </div>
+
+                    {/* Parking Toggle */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Parking Available</label>
+                      <div className="flex items-center space-x-3 mt-1">
+                        <button
+                          onClick={() => setTempFilters(prev => ({ ...prev, shopHasParking: !prev.shopHasParking }))}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            tempFilters.shopHasParking ? 'bg-blue-600' : 'bg-gray-200'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              tempFilters.shopHasParking ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                        <span className="text-sm text-gray-600">
+                          {tempFilters.shopHasParking ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Road Type */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Road Type</label>
+                      <select
+                        value={tempFilters.shopRoadType || ''}
+                        onChange={(e) => setTempFilters(prev => ({ ...prev, shopRoadType: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                      >
+                        <option value="">Any Road Type</option>
+                        <option value="Pitched Road">Pitched Road</option>
+                        <option value="Graveled Road">Graveled Road</option>
+                        <option value="Dirt Road">Dirt Road</option>
+                        <option value="Main Road">Main Road</option>
+                        <option value="Sub Road">Sub Road</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Filter Actions */}
               <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-4 border-t border-gray-200">
@@ -933,13 +1821,13 @@ function Listing({
                   className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
                 >
                   <MagnifyingGlassIcon className="h-4 w-4" />
-                  Apply Filters & Search
+                  Apply Filters
                 </button>
                 <button
                   onClick={handleClearFilters}
                   className="px-6 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-50 border border-gray-300 rounded-lg transition-colors text-sm font-medium"
                 >
-                  Clear All Filters
+                  Clear Filters
                 </button>
               </div>
             </div>
@@ -947,7 +1835,7 @@ function Listing({
 
           {/* Property Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {isLoading ? (
+            {(isLoading || isInitialLoading) ? (
               // Loading skeleton cards
               Array.from({ length: 6 }).map((_, index) => (
                 <div key={`skeleton-${index}`} className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100 animate-pulse">
@@ -965,9 +1853,9 @@ function Listing({
               ))
             ) : (
               // Actual property cards
-              currentItems.map((item) => (
+              currentItems.map((item, index) => (
                 <PropertyCard
-                  key={item.id}
+                  key={`${viewFilter}-${item.id}-${index}`}
                   item={item}
                   toggleFavorite={toggleFavorite}
                   favorites={favorites}
@@ -977,7 +1865,7 @@ function Listing({
           </div>
 
           {/* Pagination */}
-          {!isLoading && displayListings.length > itemsPerPage && (
+          {!isLoading && !isInitialLoading && displayListings.length > itemsPerPage && (
             <div className="flex flex-col items-center space-y-4">
               <div className="flex items-center space-x-2">
                 <button
@@ -1020,7 +1908,7 @@ function Listing({
           )}
 
           {/* No Results */}
-          {!isLoading && displayListings.length === 0 && (
+          {!isLoading && !isInitialLoading && displayListings.length === 0 && (
             <div className="text-center py-12">
               <div className="bg-gray-50 max-w-md mx-auto p-6 rounded-lg border border-gray-200">
                 <MagnifyingGlassIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -1035,16 +1923,30 @@ function Listing({
                 </p>
                 <button
                   onClick={() => {
+                    console.log("🧹 CLEARING ALL FILTERS AND DATA");
+                    // Reset all filters
                     setViewFilter("all");
                     setPropertyType("All");
                     setBathRoomsCountLocal(0);
                     setRoomsCount(0);
                     setParkingCount(0);
                     setPriceRange(null);
-                    setArea(null);
+                    setLocationFilter('');
+                    
+                    // COMPLETELY reset search state
                     setIsSearchPerformed(false);
+                    setSearchAddress(null);
                     setAllAddressData([]);
+                    
+                    // Clear address input
+                    setAddress(null);
+                    
+                    // Reset filter state
                     handleClearFilters();
+                    
+                    // Force parent to show default data
+                    if (setListing) setListing([]);
+                    if (setSecondaryListings) setSecondaryListings([]);
                   }}
                   className="text-blue-600 font-medium hover:text-blue-800"
                 >
