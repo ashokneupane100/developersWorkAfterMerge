@@ -5,10 +5,11 @@ import { supabase } from "@/utils/supabase/client";
 import { useAuth } from "@/components/Provider/useAuth";
 import { Loader } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { useState, useEffect } from "react"; // ✅ Added useEffect import
+import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import Image from "next/image";
-import GoogleAddressSearch from '@/app/_components/GoogleAddressSearch';
+// Replace GoogleAddressSearch with EnhancedGooglePlacesSearch
+import EnhancedGooglePlacesSearch from '@/app/_components/EnhancedGooglePlacesSearch';
 
 function AddNewListing() {
   const [selectedAddress, setSelectedAddress] = useState(null);
@@ -17,7 +18,7 @@ function AddNewListing() {
   const [loader, setLoader] = useState(false);
   const router = useRouter();
 
-  // ✅ Move authentication redirect to useEffect to prevent render-time navigation
+  // Move authentication redirect to useEffect to prevent render-time navigation
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login');
@@ -33,14 +34,30 @@ function AddNewListing() {
     try {
       setLoader(true);
       
-      // Validate inputs
-      if (!selectedAddress?.label || !coordinates?.lat || !coordinates?.lng || !user?.email) {
-        toast.error("Please ensure all fields are filled correctly");
+      // Enhanced validation with better error messages
+      if (!selectedAddress?.label) {
+        toast.error("Please select a location from the search results");
+        return;
+      }
+      
+      if (!coordinates?.lat || !coordinates?.lng) {
+        toast.error("Unable to get coordinates for selected location. Please try selecting again.");
+        return;
+      }
+      
+      if (!user?.email) {
+        toast.error("User authentication error. Please log in again.");
         return;
       }
 
       // Trim Nepal from the address
       const trimmedAddress = trimNepalFromAddress(selectedAddress.label);
+
+      console.log('Creating listing with:', {
+        address: trimmedAddress,
+        coordinates,
+        createdBy: user.email
+      });
 
       // Insert the initial listing data
       const { data, error } = await supabase
@@ -82,7 +99,7 @@ function AddNewListing() {
     );
   }
 
-  // ✅ Don't render content while redirecting (but don't call router.push here)
+  // Don't render content while redirecting
   if (!user) {
     return null;
   }
@@ -111,38 +128,56 @@ function AddNewListing() {
                 बेच्न तथा भाडामा लगाउन पोस्ट गर्नुहोस्
               </h2>
               <p className="text-gray-800 text-lg mt-[-.2rem] mb-1 font-semibold">
-                Enter Address and Click Next...
+                Search for any place in Nepal and click Next...
               </p>
             </div>
 
             <div className="max-w-3xl mx-auto">
-              <GoogleAddressSearch
+              {/* Enhanced Google Places Search Component */}
+              <EnhancedGooglePlacesSearch
                 selectedAddress={(value) => {
-                  if (value) {
-                    setSelectedAddress(value);
-                  }
+                  console.log('Address selected:', value);
+                  setSelectedAddress(value);
                 }}
                 setCoordinates={(value) => {
-                  if (value && value.lat && value.lng) {
-                    setCoordinates(value);
-                  }
+                  console.log('Coordinates set:', value);
+                  setCoordinates(value);
                 }}
               />
 
+              {/* Debug information (remove in production) */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600">
+                  <div>Address: {selectedAddress ? '✅' : '❌'}</div>
+                  <div>Coordinates: {coordinates.lat && coordinates.lng ? '✅' : '❌'}</div>
+                  <div>API Key: {process.env.NEXT_PUBLIC_GOOGLE_PLACE_API_KEY ? '✅' : '❌'}</div>
+                </div>
+              )}
+
               <Button
-                className="w-full bg-primary hover:bg-primary/90 text-white py-3 rounded-xl text-lg mt-4 transition-colors flex items-center justify-center"
+                className="w-full bg-primary hover:bg-primary/90 text-white py-3 rounded-xl text-lg mt-4 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={!selectedAddress || !coordinates.lat || !coordinates.lng || loader}
                 onClick={nextHandler}
               >
                 {loader ? (
                   <>
                     <Loader className="animate-spin mr-3" />
-                    Loading...
+                    Creating Listing...
                   </>
                 ) : (
-                  "Click Next"
+                  <>
+                    {selectedAddress && coordinates.lat ? 
+                      "Click Next to Continue" : 
+                      "Select a Location First"
+                    }
+                  </>
                 )}
               </Button>
+
+              {/* Help text */}
+              <div className="mt-3 text-center text-sm text-gray-500">
+                Try searching for: "Kathmandu restaurants", "Pokhara hotels", "Lalitpur shops", or any address
+              </div>
             </div>
           </div>
         </div>
