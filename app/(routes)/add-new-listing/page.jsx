@@ -5,7 +5,7 @@ import { supabase } from "@/utils/supabase/client";
 import { useAuth } from "@/components/Provider/useAuth";
 import { Loader } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // ✅ Added useEffect import
 import { toast } from "sonner";
 import Image from "next/image";
 import GoogleAddressSearch from '@/app/_components/GoogleAddressSearch';
@@ -16,6 +16,13 @@ function AddNewListing() {
   const { user, isLoading: authLoading } = useAuth();
   const [loader, setLoader] = useState(false);
   const router = useRouter();
+
+  // ✅ Move authentication redirect to useEffect to prevent render-time navigation
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, authLoading, router]);
 
   const trimNepalFromAddress = (address) => {
     // Remove ", Nepal" or " Nepal" from the end of the address
@@ -75,9 +82,8 @@ function AddNewListing() {
     );
   }
 
-  // Redirect to login if not authenticated
+  // ✅ Don't render content while redirecting (but don't call router.push here)
   if (!user) {
-    router.push('/login');
     return null;
   }
 
