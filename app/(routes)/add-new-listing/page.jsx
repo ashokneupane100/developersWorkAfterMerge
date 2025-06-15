@@ -9,7 +9,7 @@ import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import Image from "next/image";
 // Replace GoogleAddressSearch with EnhancedGooglePlacesSearch
-import EnhancedGooglePlacesSearch from '@/app/_components/EnhancedGooglePlacesSearch';
+import EnhancedGooglePlacesSearch from '@/app/_components/GoogleAddressSearch';
 
 function AddNewListing() {
   const [selectedAddress, setSelectedAddress] = useState(null);
