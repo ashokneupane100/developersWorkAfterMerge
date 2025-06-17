@@ -24,7 +24,7 @@ function EnhancedGooglePlacesSearch({ selectedAddress, setCoordinates }) {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACE_API_KEY;
     
     if (!apiKey) {
-      setError('Google Places API key not found in environment variables');
+      setError('गुगल प्लेसेस API कुञ्जी फेला परेन / Google Places API key not found in environment variables');
       setDebugInfo('Add NEXT_PUBLIC_GOOGLE_PLACE_API_KEY to your .env.local file');
       return;
     }
@@ -64,7 +64,7 @@ function EnhancedGooglePlacesSearch({ selectedAddress, setCoordinates }) {
     }
 
     if (!autocompleteService.current) {
-      setError('Google Places service not available');
+      setError('गुगल प्लेसेस सेवा उपलब्ध छैन / Google Places service not available');
       return;
     }
 
@@ -308,7 +308,7 @@ function EnhancedGooglePlacesSearch({ selectedAddress, setCoordinates }) {
                   setIsOpen(true);
                 }
               }}
-              placeholder="Search any place in Nepal (e.g., restaurants, shops, landmarks)"
+              placeholder="नेपालमा कुनै पनि ठाउँ खोज्नुहोस् (जस्तै: रेस्टुरेन्ट, पसल, ठेगाना) / Search any place in Nepal"
               className={`w-full h-[43px] px-3 pr-20 border-t border-r border-b rounded-r-lg focus:outline-none focus:ring-2 transition-colors ${
                 error ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 
                 'border-gray-300 focus:border-purple-500 focus:ring-purple-500'
@@ -353,7 +353,7 @@ function EnhancedGooglePlacesSearch({ selectedAddress, setCoordinates }) {
                     <div className="text-xs text-gray-500 mt-1">
                       {prediction.structured_formatting?.secondary_text || 
                        prediction.types?.slice(0, 3).join(', ') || 
-                       'Location in Nepal'}
+                       'नेपालमा स्थान / Location in Nepal'}
                     </div>
                   </div>
                 </div>
@@ -365,20 +365,19 @@ function EnhancedGooglePlacesSearch({ selectedAddress, setCoordinates }) {
           {isOpen && predictions.length === 0 && query.trim() && !isLoading && (
             <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-50 px-4 py-3">
               <div className="text-sm text-gray-500 text-center">
-                No places found. Try searching for cities, landmarks, or businesses.
+                कुनै ठाउँ फेला परेन। शहर, स्थान वा व्यवसायको लागि खोज्ने प्रयास गर्नुहोस्।
+                <br />No places found. Try searching for cities, landmarks, or businesses.
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Debug/Status information */}
-      {(debugInfo || error) && (
-        <div className={`mt-2 px-3 py-2 rounded-md text-xs ${
-          error ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'
-        }`}>
-          {error && <AlertCircle className="inline w-3 h-3 mr-1" />}
-          {error || debugInfo}
+      {/* Show only errors, not debug info */}
+      {error && (
+        <div className="mt-2 px-3 py-2 rounded-md text-xs bg-red-50 text-red-700">
+          <AlertCircle className="inline w-3 h-3 mr-1" />
+          {error}
         </div>
       )}
 
@@ -387,7 +386,7 @@ function EnhancedGooglePlacesSearch({ selectedAddress, setCoordinates }) {
         <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <p className="text-sm text-green-700 font-medium">Selected Location:</p>
+            <p className="text-sm text-green-700 font-medium">छानिएको स्थान / Selected Location:</p>
           </div>
           <p className="text-sm text-gray-700 mt-1 ml-4">{selectedPlace.label}</p>
         </div>
@@ -397,7 +396,8 @@ function EnhancedGooglePlacesSearch({ selectedAddress, setCoordinates }) {
       {!isGoogleMapsLoaded && (
         <div className="mt-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
           <div className="text-sm text-yellow-700">
-            Loading Google Maps... Please wait.
+            गुगल म्याप लोड हुँदैछ... कृपया पर्खनुहोस्।
+            <br />Loading Google Maps... Please wait.
           </div>
         </div>
       )}

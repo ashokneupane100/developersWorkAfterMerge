@@ -9,7 +9,8 @@ import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import Image from "next/image";
 // Replace GoogleAddressSearch with EnhancedGooglePlacesSearch
-import EnhancedGooglePlacesSearch from '@/app/_components/EnhancedGooglePlacesSearch';
+import EnhancedGooglePlacesSearch from '@/app/_components/GoogleAddressSearch';
+import Loading from "./loading";
 
 function AddNewListing() {
   const [selectedAddress, setSelectedAddress] = useState(null);
@@ -92,11 +93,7 @@ function AddNewListing() {
 
   // Handle authentication loading state
   if (authLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Loader className="animate-spin h-8 w-8 text-primary" />
-      </div>
-    );
+    return <Loading />;
   }
 
   // Don't render content while redirecting
@@ -145,14 +142,7 @@ function AddNewListing() {
                 }}
               />
 
-              {/* Debug information (remove in production) */}
-              {process.env.NODE_ENV === 'development' && (
-                <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600">
-                  <div>Address: {selectedAddress ? '✅' : '❌'}</div>
-                  <div>Coordinates: {coordinates.lat && coordinates.lng ? '✅' : '❌'}</div>
-                  <div>API Key: {process.env.NEXT_PUBLIC_GOOGLE_PLACE_API_KEY ? '✅' : '❌'}</div>
-                </div>
-              )}
+            
 
               <Button
                 className="w-full bg-primary hover:bg-primary/90 text-white py-3 rounded-xl text-lg mt-4 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"

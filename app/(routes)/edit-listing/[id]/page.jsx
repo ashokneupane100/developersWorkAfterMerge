@@ -232,75 +232,236 @@ function EditListing({ params: paramsPromise }) {
     }
   };
 
-  const onSubmitHandler = async (values, { setFieldError }) => {
-    if (!hasPermission) {
-      toast.error("You do not have permission to update this listing");
+// const onSubmitHandler = async (values, { setFieldError }) => {
+//   if (!user) {
+//     toast.error("You must be logged in to submit the form");
+//     return;
+//   }
+
+//   setSaving(true);
+
+//   try {
+//     if (images.length === 0) {
+//       toast.error("Please upload at least 1 image");
+//       setSaving(false);
+//       return;
+//     }
+
+
+//     const { data: insertedListing, error: insertError } = await supabase
+//       .from("pending_listings")
+//       .insert({
+//         action: values.action,
+//         propertytype: values.propertyType,
+//         rooms: values.propertyType === "Land" ? null : Number(values.rooms),
+//         bathrooms: values.propertyType === "Land" ? null : values.bathrooms,
+//         parking: values.propertyType === "Land" ? null : values.parking,
+//         area: values.area,
+//         price: Number(values.price),
+//         phone: values.phone,
+//         description: values.description,
+//         post_title: values.post_title,
+//         createdby: user.email,
+//         fullname: user.name || "",
+//         profileimage: user.image || "",
+//         active: true,
+//         status: "pending",
+//         views: 0,
+//         sold: false,
+//         khali_hune_date: null,
+//         coordinates: listing?.coordinates,
+//         address: listing?.address,
+//       })
+//       .select("id")
+//       .single();
+
+//     if (insertError) {
+//       console.error("Insert error:", insertError);
+//       toast.error("Failed to submit listing");
+//       setSaving(false);
+//       return;
+//     }
+
+//     const pendingId = insertedListing.id;
+
+
+//     for (const image of images) {
+//       if (!(image instanceof File)) {
+//         console.warn("Skipped invalid image:", image);
+//         continue;
+//       }
+
+//       const fileExt = image.name.split(".").pop();
+//       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+//       const { data: uploadData, error: uploadError } = await supabase
+//         .storage
+//         .from("pending_listing_images") 
+//         .upload(fileName, image, {
+//           cacheControl: "3600",
+//           upsert: false,
+//           contentType: image.type,
+//         });
+
+//       if (uploadError) {
+//         console.error("Image upload failed:", uploadError);
+//         toast.error("One or more images failed to upload.");
+//         continue;
+//       }
+
+//       const { data: publicUrlData } = await supabase
+//         .storage
+//         .from("pending_listing_images")
+//         .getPublicUrl(fileName);
+
+//       const imageUrl = publicUrlData?.publicUrl;
+
+//       if (!imageUrl) {
+//         console.error("Image public URL not retrieved.");
+//         continue;
+//       }
+
+//       const { error: imageInsertError } = await supabase
+//         .from("pending_listing_images")
+//         .insert({
+//           pending_listing_id: pendingId,
+//           url: imageUrl,
+//         });
+
+//       if (imageInsertError) {
+//         console.error("Image DB insert error:", imageInsertError);
+//         toast.error("One or more images failed to save in database.");
+//       }
+//     }
+
+//     toast.success("Your listing has been submitted successfully!");
+//     setTimeout(() => {
+//       router.push("/");
+//     }, 1500);
+//   } catch (error) {
+//     console.error("Submission error:", error);
+//     toast.error("An unexpected error occurred during submission.");
+//   } finally {
+//     setSaving(false);
+//   }
+// };
+
+
+const onSubmitHandler = async (values, { setFieldError }) => {
+  if (!user) {
+    toast.error("You must be logged in to submit the form");
+    return;
+  }
+
+  setSaving(true);
+
+  try {
+    if (images.length === 0) {
+      toast.error("Please upload at least 1 image");
+      setSaving(false);
       return;
     }
-  
-    setSaving(true);
-    try {
-      // First validate if we have images
-      if (images.length === 0 && (!listing?.listingImages || listing.listingImages.length === 0)) {
-        toast.error("Please add at least 1 image");
-        setSaving(false);
-        return;
-      }
-  
-      // Clean up the values before sending to Supabase
-      const updateValues = {
-        ...values,
-        active: true,
-        rooms: values.propertyType === "Land" ? null : values.rooms,
+
+    // ✅ INSERT INTO pending_listings (with 's')
+    const { data: insertedListing, error: insertError } = await supabase
+      .from("pending_listings") // ✅ Corrected table name
+      .insert({
+        action: values.action,
+        propertytype: values.propertyType,
+        rooms: values.propertyType === "Land" ? null : Number(values.rooms),
         bathrooms: values.propertyType === "Land" ? null : values.bathrooms,
         parking: values.propertyType === "Land" ? null : values.parking,
+        area: values.area,
         price: Number(values.price),
-        rooms: values.rooms ? Number(values.rooms) : null,
-        createdBy: listing.createdBy,
-        profileImage: user?.image,
-        fullName: user?.name,
-      };
-  
-      const { error } = await supabase
-        .from("listing")
-        .update(updateValues)
-        .eq("id", id);
-  
-      if (error) {
-        console.error("Update error:", error);
-        toast.error("Update failed: " + error.message);
-        setSaving(false);
-        return;
-      }
-  
-      if (images.length > 0) {
-        const imagesUploaded = await uploadImages(id);
-        if (!imagesUploaded) {
-          toast.error("Failed to upload images");
-          setSaving(false);
-          return;
-        }
-      }
-  
-      toast.success("Listing updated successfully!");
-      
-      // Redirect with a small delay to ensure the toast message is visible
-      setTimeout(() => {
-        handleReturnNavigation();
-      }, 1500);
-  
-    } catch (error) {
-      console.error("Submission error:", error);
-      toast.error("Failed to update listing");
-      if (error.details) {
-        Object.entries(error.details).forEach(([key, value]) => {
-          setFieldError(key, value);
-        });
-      }
-    } finally {
+        phone: values.phone,
+        description: values.description,
+        post_title: values.post_title,
+        createdby: user.email,
+        fullname: user.name || "",
+        profileimage: user.image || "",
+        active: true,
+        status: "pending",
+        views: 0,
+        sold: false,
+        khali_hune_date: null,
+        coordinates: listing?.coordinates,
+        address: listing?.address,
+      })
+      .select("id") // returns the inserted row's id
+      .single();
+
+    if (insertError || !insertedListing) {
+      console.error("Insert error:", insertError);
+      toast.error("Failed to submit listing.");
       setSaving(false);
+      return;
     }
-  };
+
+    const pendingId = insertedListing.id;
+
+    // ✅ Upload images and insert into pending_listing_images
+    for (const image of images) {
+      if (!(image instanceof File)) {
+        console.warn("Skipped non-File object:", image);
+        continue;
+      }
+
+      const fileExt = image.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("pendinglistingimages") 
+        .upload(fileName, image, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: image.type
+        });
+
+      if (uploadError) {
+        console.error("Image upload failed:", uploadError);
+        toast.error("Image upload failed. Skipping image.");
+        continue;
+      }
+
+      const { data: publicUrlData } = await supabase.storage
+        .from("pendinglistingimages")
+        .getPublicUrl(fileName);
+
+      const imageUrl = publicUrlData?.publicUrl;
+
+      if (!imageUrl) {
+        console.error("Public URL missing for uploaded image.");
+        continue;
+      }
+
+      // ✅ Insert into the pending_listing_images table
+      const { error: imageInsertError } = await supabase
+        .from("pendinglistingimages")
+        .insert({
+          pending_listing_id: pendingId, // ✅ Foreign key
+          url: imageUrl
+        });
+
+      if (imageInsertError) {
+        console.error("Image reference DB insert error:", imageInsertError);
+        toast.error("One or more images failed to save.");
+      }
+    }
+
+    toast.success("Your listing has been submitted successfully!");
+
+    setTimeout(() => {
+      router.push("/"); // or wherever you want to redirect after submission
+    }, 1500);
+  } catch (error) {
+    console.error("Unexpected submission error:", error);
+    toast.error("An unexpected error occurred.");
+  } finally {
+    setSaving(false);
+  }
+};
+
+
 
   if (authLoading || loading) {
     return (
