@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import Image from "next/image";
 // Replace GoogleAddressSearch with EnhancedGooglePlacesSearch
 import EnhancedGooglePlacesSearch from '@/app/_components/GoogleAddressSearch';
+import Loading from "./loading";
 
 function AddNewListing() {
   const [selectedAddress, setSelectedAddress] = useState(null);
