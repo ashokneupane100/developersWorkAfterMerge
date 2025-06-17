@@ -117,93 +117,158 @@ const PropertyRequestForm = () => {
   const showLandFields = formData.propertyType === 'Land' || formData.propertyType === 'House';
   
   // Handle form submission with improved error handling
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+    
+  //   if (!formData.agreeToTerms) {
+  //     toast.error("You must agree to the terms and conditions to proceed.");
+  //     return;
+  //   }
+
+  //   if (!coordinates.lat || !coordinates.lng) {
+  //     toast.error("Please select a valid location from the map.");
+  //     return;
+  //   }
+    
+  //   // Additional validations
+  //   if (!formData.propertyType) {
+  //     toast.error("Please select a property type.");
+  //     return;
+  //   }
+    
+  //   if (!formData.budget) {
+  //     toast.error("Please select a budget range.");
+  //     return;
+  //   }
+    
+  //   setLoading(true);
+  //   setError('');
+  //   setSuccess(false);
+    
+  //   try {
+  //     // Format coordinates consistently
+  //     const formattedCoords = {
+  //       lat: parseFloat(coordinates.lat.toFixed(6)),
+  //       lng: parseFloat(coordinates.lng.toFixed(6))
+  //     };
+      
+  //     // Prepare submission data
+  //     const submitData = {
+  //       ...formData,
+  //       coordinates: JSON.stringify(formattedCoords),
+  //       location: address || formData.location
+  //     };
+      
+  //     console.log('Submitting property request:', submitData);
+      
+  //     const response = await axios.post('/api/property-request', submitData);
+      
+  //     if (response.data.success) {
+  //       setSuccess(true);
+  //       toast.success("Your request has been submitted successfully.");
+        
+  //       // Reset form
+  //       setFormData({
+  //         fullName: '',
+  //         email: '',
+  //         phone: '',
+  //         propertyType: '',
+  //         location: '',
+  //         coordinates: '',
+  //         budget: '',
+  //         financing: false,
+  //         area: '',
+  //         areaUnit: 'Aana',
+  //         roadWidth: '',
+  //         roadWidthUnit: 'Feet',
+  //         numberOfRooms: '',
+  //         numberOfPeople: "",
+  //         additionalRequirements: '',
+  //         agreeToTerms: false
+  //       });
+  //       setAddress('');
+  //       setCoordinates({ lat: null, lng: null });
+  //     }
+  //   } catch (error) {
+  //     console.error("Error submitting form:", error);
+      
+  //     let errorMessage = "There was an error submitting your request. Please try again.";
+      
+  //     if (error.response && error.response.data && error.response.data.error) {
+  //       errorMessage = error.response.data.error;
+  //     }
+      
+  //     setError(errorMessage);
+  //     toast.error(errorMessage);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.agreeToTerms) {
-      toast.error("You must agree to the terms and conditions to proceed.");
-      return;
-    }
-
-    if (!coordinates.lat || !coordinates.lng) {
-      toast.error("Please select a valid location from the map.");
-      return;
-    }
-    
-    // Additional validations
-    if (!formData.propertyType) {
-      toast.error("Please select a property type.");
-      return;
-    }
-    
-    if (!formData.budget) {
-      toast.error("Please select a budget range.");
-      return;
-    }
-    
-    setLoading(true);
-    setError('');
-    setSuccess(false);
-    
     try {
-      // Format coordinates consistently
-      const formattedCoords = {
-        lat: parseFloat(coordinates.lat.toFixed(6)),
-        lng: parseFloat(coordinates.lng.toFixed(6))
-      };
-      
-      // Prepare submission data
-      const submitData = {
-        ...formData,
-        coordinates: JSON.stringify(formattedCoords),
-        location: address || formData.location
-      };
-      
-      console.log('Submitting property request:', submitData);
-      
-      const response = await axios.post('/api/property-request', submitData);
-      
-      if (response.data.success) {
-        setSuccess(true);
-        toast.success("Your request has been submitted successfully.");
-        
-        // Reset form
-        setFormData({
-          fullName: '',
-          email: '',
-          phone: '',
-          propertyType: '',
-          location: '',
-          coordinates: '',
-          budget: '',
-          financing: false,
-          area: '',
-          areaUnit: 'Aana',
-          roadWidth: '',
-          roadWidthUnit: 'Feet',
-          numberOfRooms: '',
-          numberOfPeople: "",
-          additionalRequirements: '',
-          agreeToTerms: false
-        });
-        setAddress('');
-        setCoordinates({ lat: null, lng: null });
-      }
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      
-      let errorMessage = "There was an error submitting your request. Please try again.";
-      
-      if (error.response && error.response.data && error.response.data.error) {
-        errorMessage = error.response.data.error;
-      }
-      
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
+  const formattedCoords = {
+    lat: parseFloat(coordinates.lat.toFixed(6)),
+    lng: parseFloat(coordinates.lng.toFixed(6))
   };
+
+  const payload = {
+    fullName: formData.fullName,
+    email: formData.email,
+    phone: formData.phone,
+    propertyType: formData.propertyType,
+    location: address || formData.location,
+    coordinates: formattedCoords, // Supabase JSONB field
+    budget: formData.budget,
+    financing: formData.financing,
+    area: formData.area || null,
+    areaUnit: formData.areaUnit || null,
+    roadWidth: formData.roadWidth || null,
+    roadWidthUnit: formData.roadWidthUnit || null,
+    numberOfRooms: formData.numberOfRooms ? parseInt(formData.numberOfRooms) : null,
+    numberOfPeople: formData.numberOfPeople ? parseInt(formData.numberOfPeople) : null,
+    additionalRequirements: formData.additionalRequirements || null,
+  };
+
+  const { data, error } = await supabase
+    .from('requestedProperties')
+    .insert([payload]);
+
+  if (error) {
+    console.error("Supabase insert error:", error);
+    toast.error("Failed to submit. Please try again.");
+  } else {
+    setSuccess(true);
+    toast.success("Your request has been submitted successfully.");
+    
+    // Reset form
+    setFormData({
+      fullName: '',
+      email: '',
+      phone: '',
+      propertyType: '',
+      location: '',
+      coordinates: '',
+      budget: '',
+      financing: false,
+      area: '',
+      areaUnit: 'Aana',
+      roadWidth: '',
+      roadWidthUnit: 'Feet',
+      numberOfRooms: '',
+      numberOfPeople: "",
+      additionalRequirements: '',
+      agreeToTerms: false
+    });
+    setAddress('');
+    setCoordinates({ lat: null, lng: null });
+  }
+} catch (error) {
+  console.error("Unexpected error:", error);
+  toast.error("An unexpected error occurred.");
+}
+  }
 
   return (
     <div className="max-w-4xl mx-auto my-8 bg-white rounded-lg shadow-md overflow-hidden">
