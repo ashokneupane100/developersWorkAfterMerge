@@ -1480,18 +1480,18 @@ function Listing({
               {/* Property Type Specific Fields */}
               {tempFilters.propertyType === 'Room/Flat' && (
                 <div className="mt-4 pt-4 border-t border-gray-200">
-                  <h4 className="text-md font-medium text-gray-800 mb-3">Room/Flat Specific Fields</h4>
+                  <h4 className="text-md font-medium text-gray-800 mb-3">कोठा/फ्ल्याटसम्बन्धी विवरण (Room/Flat Specific Fields)</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
                     {/* Room Type */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Room Type</label>
+                      <label className="text-sm font-medium text-gray-700">कोठा प्रकार (Room Type)</label>
                       <select
                         value={tempFilters.roomType || ''}
                         onChange={(e) => setTempFilters(prev => ({ ...prev, roomType: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
                       >
-                        <option value="">All Room Types</option>
+                        <option value="">सबै प्रकार (All Room Types)</option>
                         <option value="Single Room">Single Room</option>
                         <option value="Double Room">Double Room</option>
                         <option value="1BHK">1BHK (Bedroom, Hall, Kitchen)</option>
@@ -1501,31 +1501,54 @@ function Listing({
                       </select>
                     </div>
 
-                    {/* Car Parking */}
+                    {/* Parking Toggle */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Number of Car Parking Spaces</label>
-                      <input
-                        type="number"
-                        min={0}
-                        placeholder="e.g. 1"
-                        value={tempFilters.carParking || ''}
-                        onChange={(e) => setTempFilters(prev => ({ ...prev, carParking: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                      />
+                      <label className="text-sm font-medium text-gray-700">पार्किङ उपलब्ध छ? (Parking Available?)</label>
+                      <div className="flex items-center space-x-3 mt-1">
+                        <button
+                          onClick={() => setTempFilters(prev => ({ ...prev, flatHasParking: !prev.flatHasParking }))}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${tempFilters.flatHasParking ? 'bg-blue-600' : 'bg-gray-300'
+                            }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${tempFilters.flatHasParking ? 'translate-x-6' : 'translate-x-1'
+                              }`}
+                          />
+                        </button>
+                        <span className="text-sm text-gray-600">
+                          {tempFilters.flatHasParking ? 'छ (Yes)' : 'छैन (No)'}
+                        </span>
+                      </div>
                     </div>
 
-                    {/* Bike Parking */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Number of Bike Parking Spaces</label>
-                      <input
-                        type="number"
-                        min={0}
-                        placeholder="e.g. 2"
-                        value={tempFilters.bikeParking || ''}
-                        onChange={(e) => setTempFilters(prev => ({ ...prev, bikeParking: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                      />
-                    </div>
+                    {/* Car & Bike Parking - Conditional */}
+                    {tempFilters.flatHasParking && (
+                      <>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">कार पार्किङ संख्या (No. of Car Parking)</label>
+                          <input
+                            type="number"
+                            min={0}
+                            placeholder="e.g. 1"
+                            value={tempFilters.carParking || ''}
+                            onChange={(e) => setTempFilters(prev => ({ ...prev, carParking: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">बाइक पार्किङ संख्या (No. of Bike Parking)</label>
+                          <input
+                            type="number"
+                            min={0}
+                            placeholder="e.g. 2"
+                            value={tempFilters.bikeParking || ''}
+                            onChange={(e) => setTempFilters(prev => ({ ...prev, bikeParking: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                          />
+                        </div>
+                      </>
+                    )}
 
                     {/* Water Type */}
                     <div className="space-y-2">
@@ -1533,22 +1556,22 @@ function Listing({
                       <select
                         value={tempFilters.waterType || ''}
                         onChange={(e) => setTempFilters(prev => ({ ...prev, waterType: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white"
                       >
                         <option value="">पानीको प्रकार चयन गर्नुहोस्</option>
-                        <option value="24 hour water on tap">नलबाट २४ घण्टा पानी (24hr Water on Tap)</option>
-                        <option value="Storage water">ट्यांकीमा संचित पानी (Storage Water)</option>
-                        <option value="Inar water">इनार वा कुँडो पानी (Well Water)</option>
+                        <option value="24 hour water on tap">नलबाट २४ घण्टा पानी (24hr Water)</option>
+                        <option value="Storage water">ट्यांकी पानी (Storage)</option>
+                        <option value="Inar water">इनार/कुँडो पानी (Well)</option>
                       </select>
                     </div>
 
-                    {/* Dog/Cat Allowed */}
+                    {/* Pet Allowed */}
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-gray-700">पाल्तु जनावर (Dog/Cat Allowed?)</label>
                       <select
                         value={tempFilters.petsAllowed || ''}
                         onChange={(e) => setTempFilters(prev => ({ ...prev, petsAllowed: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white"
                       >
                         <option value="">पाल्तु जनावर अनुमति? (Allowed?)</option>
                         <option value="Yes">हो (Yes - Dog & Cat)</option>
@@ -1556,7 +1579,6 @@ function Listing({
                         <option value="Only Dog">केवल कुकुर (Only Dog)</option>
                         <option value="Only Cat">केवल बिरालो (Only Cat)</option>
                       </select>
-
                     </div>
                   </div>
                 </div>
@@ -1566,63 +1588,42 @@ function Listing({
               {/* House Features */}
               {tempFilters.propertyType === 'House' && (
                 <div className="mt-4 pt-4 border-t border-gray-200">
-                  <h4 className="text-md font-medium text-gray-800 mb-3">House Specific Fields</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <h4 className="text-md font-medium text-gray-800 mb-3">घरसम्बन्धी विवरण (House Specific Fields)</h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     {/* Bedrooms */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Bedrooms</label>
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-gray-700">Bedrooms (शयनकक्ष)</label>
                       <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
                         <span className="text-sm text-gray-600">Min {tempFilters.rooms}</span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setTempFilters(prev => ({ ...prev, rooms: Math.max(0, prev.rooms - 1) }))}
-                            className="w-7 h-7 rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 font-medium"
-                          >
-                            -
-                          </button>
-                          <span className="w-6 text-center font-semibold text-gray-900">{tempFilters.rooms}</span>
-                          <button
-                            onClick={() => setTempFilters(prev => ({ ...prev, rooms: prev.rooms + 1 }))}
-                            className="w-7 h-7 rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 font-medium"
-                          >
-                            +
-                          </button>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => setTempFilters(prev => ({ ...prev, rooms: Math.max(0, prev.rooms - 1) }))} className="w-6 h-6 border rounded text-sm">-</button>
+                          <span className="w-6 text-center">{tempFilters.rooms}</span>
+                          <button onClick={() => setTempFilters(prev => ({ ...prev, rooms: prev.rooms + 1 }))} className="w-6 h-6 border rounded text-sm">+</button>
                         </div>
                       </div>
                     </div>
 
                     {/* Bathrooms */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Bathrooms</label>
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-gray-700">Bathrooms (नुहाउने कोठा)</label>
                       <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
                         <span className="text-sm text-gray-600">Min {tempFilters.bathrooms}</span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setTempFilters(prev => ({ ...prev, bathrooms: Math.max(0, prev.bathrooms - 1) }))}
-                            className="w-7 h-7 rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 font-medium"
-                          >
-                            -
-                          </button>
-                          <span className="w-6 text-center font-semibold text-gray-900">{tempFilters.bathrooms}</span>
-                          <button
-                            onClick={() => setTempFilters(prev => ({ ...prev, bathrooms: prev.bathrooms + 1 }))}
-                            className="w-7 h-7 rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 font-medium"
-                          >
-                            +
-                          </button>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => setTempFilters(prev => ({ ...prev, bathrooms: Math.max(0, prev.bathrooms - 1) }))} className="w-6 h-6 border rounded text-sm">-</button>
+                          <span className="w-6 text-center">{tempFilters.bathrooms}</span>
+                          <button onClick={() => setTempFilters(prev => ({ ...prev, bathrooms: prev.bathrooms + 1 }))} className="w-6 h-6 border rounded text-sm">+</button>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Parking Toggle */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Parking Available</label>
-                      <div className="flex items-center space-x-3 mt-1">
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-gray-700">Parking Available (पार्किङ छ?)</label>
+                      <div className="flex items-center space-x-3">
                         <button
                           onClick={() => setTempFilters(prev => ({ ...prev, houseHasParking: !prev.houseHasParking }))}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${tempFilters.houseHasParking ? 'bg-blue-600' : 'bg-gray-200'
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${tempFilters.houseHasParking ? 'bg-blue-600' : 'bg-gray-300'
                             }`}
                         >
                           <span
@@ -1631,62 +1632,95 @@ function Listing({
                           />
                         </button>
                         <span className="text-sm text-gray-600">
-                          {tempFilters.houseHasParking ? 'Yes' : 'No'}
+                          {tempFilters.houseHasParking ? 'Yes (छ)' : 'No (छैन)'}
                         </span>
                       </div>
                     </div>
 
+                    {/* Parking Inputs – Only Show If Toggle is On */}
+                    {tempFilters.houseHasParking && (
+                      <>
+                        <div className="space-y-1">
+                          <label className="text-sm font-medium text-gray-700">Car Parking (कार पार्किङ संख्या)</label>
+                          <input
+                            type="number"
+                            min={0}
+                            placeholder="e.g. 1"
+                            value={tempFilters.houseCarParking || ''}
+                            onChange={(e) => setTempFilters(prev => ({ ...prev, houseCarParking: e.target.value }))}
+                            className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-sm font-medium text-gray-700">Bike Parking (बाइक पार्किङ संख्या)</label>
+                          <input
+                            type="number"
+                            min={0}
+                            placeholder="e.g. 2"
+                            value={tempFilters.houseBikeParking || ''}
+                            onChange={(e) => setTempFilters(prev => ({ ...prev, houseBikeParking: e.target.value }))}
+                            className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+                          />
+                        </div>
+                      </>
+                    )}
+
                     {/* Area */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Area (sq ft)</label>
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-gray-700">Area (क्षेत्रफल - sq ft)</label>
                       <input
                         type="text"
                         placeholder="e.g., 2000"
                         value={tempFilters.houseArea || ''}
                         onChange={(e) => setTempFilters(prev => ({ ...prev, houseArea: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                       />
                     </div>
 
                     {/* Facing */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">House Facing</label>
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-gray-700">House Facing (घरको दिशा)</label>
                       <select
                         value={tempFilters.houseFacing || ''}
                         onChange={(e) => setTempFilters(prev => ({ ...prev, houseFacing: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                        className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm bg-white"
                       >
-                        <option value="">Any Direction</option>
-                        <option value="North">North</option>
-                        <option value="South">South</option>
-                        <option value="East">East</option>
-                        <option value="West">West</option>
-                        <option value="North-East">North-East</option>
-                        <option value="North-West">North-West</option>
-                        <option value="South-East">South-East</option>
-                        <option value="South-West">South-West</option>
+                        <option value="">Direction चयन गर्नुहोस्</option>
+                        <option value="North">उत्तर (North)</option>
+                        <option value="South">दक्षिण (South)</option>
+                        <option value="East">पूर्व (East)</option>
+                        <option value="West">पश्चिम (West)</option>
+                        <option value="North-East">उत्तर-पूर्व</option>
+                        <option value="North-West">उत्तर-पश्चिम</option>
+                        <option value="South-East">दक्षिण-पूर्व</option>
+                        <option value="South-West">दक्षिण-पश्चिम</option>
                       </select>
                     </div>
 
                     {/* Road Type */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Road Type</label>
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-gray-700">Road Type (सडकको प्रकार)</label>
                       <select
                         value={tempFilters.houseRoadType || ''}
                         onChange={(e) => setTempFilters(prev => ({ ...prev, houseRoadType: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                        className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm bg-white"
                       >
-                        <option value="">Any Road Type</option>
-                        <option value="Pitched Road">Pitched Road</option>
-                        <option value="Graveled Road">Graveled Road</option>
-                        <option value="Dirt Road">Dirt Road</option>
-                        <option value="Main Road">Main Road</option>
-                        <option value="Sub Road">Sub Road</option>
+                        <option value="">सडक प्रकार चयन गर्नुहोस्</option>
+                        <option value="Pitched Road">पक्की सडक (Pitched Road)</option>
+                        <option value="Graveled Road">ग्राभेल सडक (Graveled)</option>
+                        <option value="Dirt Road">कच्ची सडक (Dirt)</option>
+                        <option value="Main Road">मुख्य सडक</option>
+                        <option value="Sub Road">उप सडक</option>
                       </select>
                     </div>
                   </div>
                 </div>
               )}
+
+
+
+
 
               {/* Land Features */}
               {tempFilters.propertyType === 'Land' && (
@@ -1730,27 +1764,30 @@ function Listing({
               {/* Shop Features */}
               {tempFilters.propertyType === 'Shop' && (
                 <div className="mt-4 pt-4 border-t border-gray-200">
-                  <h4 className="text-md font-medium text-gray-800 mb-3">Shop Specific Fields</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Area */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Area (sq ft)</label>
+                  <h4 className="text-md font-medium text-gray-800 mb-3">पसल विवरण (Shop Specific Fields)</h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {/* Shop Area */}
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-gray-700">Area (क्षेत्रफल - sq ft)</label>
                       <input
                         type="text"
                         placeholder="e.g., 800"
                         value={tempFilters.shopArea || ''}
                         onChange={(e) => setTempFilters(prev => ({ ...prev, shopArea: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                       />
                     </div>
 
                     {/* Parking Toggle */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Parking Available</label>
-                      <div className="flex items-center space-x-3 mt-1">
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-gray-700">Parking Available (पार्किङ उपलब्ध?)</label>
+                      <div className="flex items-center space-x-3">
                         <button
-                          onClick={() => setTempFilters(prev => ({ ...prev, shopHasParking: !prev.shopHasParking }))}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${tempFilters.shopHasParking ? 'bg-blue-600' : 'bg-gray-200'
+                          onClick={() =>
+                            setTempFilters(prev => ({ ...prev, shopHasParking: !prev.shopHasParking }))
+                          }
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${tempFilters.shopHasParking ? 'bg-blue-600' : 'bg-gray-300'
                             }`}
                         >
                           <span
@@ -1759,32 +1796,69 @@ function Listing({
                           />
                         </button>
                         <span className="text-sm text-gray-600">
-                          {tempFilters.shopHasParking ? 'Yes' : 'No'}
+                          {tempFilters.shopHasParking ? 'Yes (छ)' : 'No (छैन)'}
                         </span>
                       </div>
                     </div>
 
+                    {/* Conditionally Show Parking Fields */}
+                    {tempFilters.shopHasParking && (
+                      <>
+                        {/* Car Parking */}
+                        <div className="space-y-1">
+                          <label className="text-sm font-medium text-gray-700">Car Parking (कार पार्किङ)</label>
+                          <input
+                            type="number"
+                            min={0}
+                            placeholder="e.g., 1"
+                            value={tempFilters.shopCarParking || ''}
+                            onChange={(e) =>
+                              setTempFilters(prev => ({ ...prev, shopCarParking: e.target.value }))
+                            }
+                            className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+                          />
+                        </div>
+
+                        {/* Bike Parking */}
+                        <div className="space-y-1">
+                          <label className="text-sm font-medium text-gray-700">Bike Parking (बाइक पार्किङ)</label>
+                          <input
+                            type="number"
+                            min={0}
+                            placeholder="e.g., 2"
+                            value={tempFilters.shopBikeParking || ''}
+                            onChange={(e) =>
+                              setTempFilters(prev => ({ ...prev, shopBikeParking: e.target.value }))
+                            }
+                            className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+                          />
+                        </div>
+                      </>
+                    )}
+
                     {/* Road Type */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">
-                        बाटोको प्रकार (Road Type)
-                      </label>
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-gray-700">Road Type (बाटोको प्रकार)</label>
                       <select
                         value={tempFilters.shopRoadType || ''}
-                        onChange={(e) => setTempFilters(prev => ({ ...prev, shopRoadType: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                        onChange={(e) =>
+                          setTempFilters(prev => ({ ...prev, shopRoadType: e.target.value }))
+                        }
+                        className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm bg-white"
                       >
-                        <option value="">कुनै पनि बाटो (Any Road Type)</option>
-                        <option value="Pitched Road">पक्की बाटो (Pitched Road)</option>
-                        <option value="Graveled Road">ग्राभेल बाटो (Graveled Road)</option>
-                        <option value="Dirt Road">कच्ची बाटो (Dirt Road)</option>
-                        <option value="Main Road">मुख्य बाटो (Main Road)</option>
-                        <option value="Sub Road">सहायक बाटो (Sub Road)</option>
+                        <option value="">कुनै पनि बाटो (Any)</option>
+                        <option value="Pitched Road">पक्की बाटो</option>
+                        <option value="Graveled Road">ग्राभेल बाटो</option>
+                        <option value="Dirt Road">कच्ची बाटो</option>
+                        <option value="Main Road">मुख्य बाटो</option>
+                        <option value="Sub Road">सहायक बाटो</option>
                       </select>
                     </div>
                   </div>
                 </div>
               )}
+
+
 
               {/* Filter Actions */}
               <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-4 border-t border-gray-200">
