@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { supabase } from "@/utils/supabase/client";
+import CTASection from "./CTASection";
 
 // Smart Location Search Component
 const SmartLocationSearch = ({ value, onChange, placeholder = "Enter location..." }) => {
@@ -257,6 +258,7 @@ import { formatCurrency } from "@/components/helpers/formatCurrency";
 import OpenStreetMapSearch from "./OpenStreetMapSearch";
 import FilterSection from "./FilterSection";
 import ActionToggle from "./ActionToggle";
+import FeaturedProperties from "./FeaturedProperties";
 
 const PropertyCard = ({ item, toggleFavorite, favorites }) => {
   const propertyLocation =
@@ -1198,55 +1200,10 @@ function Listing({
           </div>
         )}
 
+          <FeaturedProperties />
+
+         <CTASection />
         <div className="container mx-auto px-4">
-          {/* Search Results Summary */}
-          {isSearchPerformed && searchAddress && (
-            <div className="mb-8 bg-blue-50 border border-blue-100 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-blue-800">
-                <MapPinIcon className="h-5 w-5 flex-shrink-0" />
-                <h2 className="font-medium">
-                  Found{" "}
-                  <span className="font-bold">{allAddressData.length}</span>{" "}
-                  Properties in{" "}
-                  <span className="font-bold">{searchAddress}</span>
-                  {propertyType !== "All" && (
-                    <span> • Type: {propertyType}</span>
-                  )}
-                  {/* Show which search action was performed */}
-                  <span className="text-sm ml-2 px-2 py-1 bg-blue-100 rounded-md">
-                    Searched for: {currentAction === "Sell" ? "Properties to Buy" : "Properties to Rent"}
-                  </span>
-                </h2>
-              </div>
-              {/* Show current active tab hint */}
-              <div className="mt-2 text-sm text-blue-600">
-                💡 Active tab automatically set to: <span className="font-semibold">
-                  {viewFilter === "sale" ? "For Sale" : viewFilter === "rent" ? "For Rent" : "All Properties"}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Property Type Search Summary (when no location) */}
-          {!isSearchPerformed && !searchAddress && propertyType !== "All" && !isInitialLoading && (listing || []).length > 0 && (
-            <div className="mb-8 bg-green-50 border border-green-100 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-green-800">
-                <BuildingOfficeIcon className="h-5 w-5 flex-shrink-0" />
-                <h2 className="font-medium">
-                  Showing All{" "}
-                  <span className="font-bold">{propertyType}</span>{" "}
-                  Properties
-                  <span className="text-sm ml-2 px-2 py-1 bg-green-100 rounded-md">
-                    {(listing || []).length + (secondaryListings || []).length} total found
-                  </span>
-                </h2>
-              </div>
-              <div className="mt-2 text-sm text-green-600">
-                💡 Search results from entire database • To search by location, enter an address above
-              </div>
-            </div>
-          )}
-
           {/* All Properties Summary (when no filters) */}
           {!isSearchPerformed && !searchAddress && propertyType === "All" && !isInitialLoading && (listing || []).length > 0 && (
             <div className="mb-8 bg-gray-50 border border-gray-100 rounded-lg p-4">
