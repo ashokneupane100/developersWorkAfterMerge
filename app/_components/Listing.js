@@ -45,7 +45,7 @@ const SmartLocationSearch = ({ value, onChange, placeholder = "Enter location...
   const misspellingMap = {
     'kriti': 'kirtipur',
     'kritipur': 'kirtipur',
-    'kathamndu': 'kathmandu', 
+    'kathamndu': 'kathmandu',
     'katmandu': 'kathmandu',
     'lalitpur': 'lalitpur',
     'lalitapur': 'lalitpur',
@@ -56,54 +56,54 @@ const SmartLocationSearch = ({ value, onChange, placeholder = "Enter location...
   // Enhanced fuzzy search function
   const fuzzySearch = (searchTerm, locations) => {
     const searchLower = searchTerm.toLowerCase().trim();
-    
+
     // First check if search term matches any misspelling
     const correctedTerm = misspellingMap[searchLower] || searchLower;
-    
+
     // Filter locations with multiple matching strategies
     const results = locations.filter(location => {
       const locationLower = location.toLowerCase();
-      
+
       // Strategy 1: Exact start match (highest priority)
       if (locationLower.startsWith(searchLower)) return true;
       if (locationLower.startsWith(correctedTerm)) return true;
-      
+
       // Strategy 2: Contains the search term
       if (locationLower.includes(searchLower)) return true;
       if (locationLower.includes(correctedTerm)) return true;
-      
+
       // Strategy 3: Fuzzy match for common typos (simple character swaps)
       if (searchTerm.length >= 3) {
         // Check for adjacent character swaps (like "kriti" vs "kirti")
         for (let i = 0; i < searchTerm.length - 1; i++) {
-          const swapped = searchTerm.slice(0, i) + 
-                         searchTerm[i + 1] + 
-                         searchTerm[i] + 
-                         searchTerm.slice(i + 2);
+          const swapped = searchTerm.slice(0, i) +
+            searchTerm[i + 1] +
+            searchTerm[i] +
+            searchTerm.slice(i + 2);
           if (locationLower.includes(swapped.toLowerCase())) return true;
         }
       }
-      
+
       return false;
     });
-    
+
     // Sort results: exact matches first, then starts-with, then contains
     return results.sort((a, b) => {
       const aLower = a.toLowerCase();
       const bLower = b.toLowerCase();
-      
+
       // Exact start matches first
       const aStartsExact = aLower.startsWith(searchLower);
       const bStartsExact = bLower.startsWith(searchLower);
       if (aStartsExact && !bStartsExact) return -1;
       if (!aStartsExact && bStartsExact) return 1;
-      
+
       // Then corrected term matches
       const aStartsCorrected = aLower.startsWith(correctedTerm);
       const bStartsCorrected = bLower.startsWith(correctedTerm);
       if (aStartsCorrected && !bStartsCorrected) return -1;
       if (!aStartsCorrected && bStartsCorrected) return 1;
-      
+
       // Then alphabetical
       return a.localeCompare(b);
     });
@@ -119,10 +119,10 @@ const SmartLocationSearch = ({ value, onChange, placeholder = "Enter location...
 
     // Use enhanced fuzzy search
     const filtered = fuzzySearch(searchTerm, locations).slice(0, 10);
-    
+
     console.log('Search term:', searchTerm);
     console.log('Filtered results:', filtered);
-    
+
     setFilteredLocations(filtered);
     // Show dropdown only if focused and has results
     setShowDropdown(isFocused && filtered.length > 0);
@@ -191,7 +191,7 @@ const SmartLocationSearch = ({ value, onChange, placeholder = "Enter location...
         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
         autoComplete="off"
       />
-      
+
       {showDropdown && (
         <div className="absolute z-[9999] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
           {filteredLocations.length > 0 ? (
@@ -209,23 +209,23 @@ const SmartLocationSearch = ({ value, onChange, placeholder = "Enter location...
                   </svg>
                   <span className="truncate">
                     {location}
-                    {/* Show hint if it's a fuzzy match */}
-                    {searchTerm.toLowerCase() !== location.toLowerCase().substring(0, searchTerm.length) && 
-                     !location.toLowerCase().startsWith(searchTerm.toLowerCase()) && (
-                      <span className="text-xs text-gray-400 ml-1">
-                        (similar to "{searchTerm}")
-                      </span>
-                    )}
+
+                    {searchTerm.toLowerCase() !== location.toLowerCase().substring(0, searchTerm.length) &&
+                      !location.toLowerCase().startsWith(searchTerm.toLowerCase()) && (
+                        <span className="text-xs text-gray-400 ml-1">
+                          (similar to "{searchTerm}")
+                        </span>
+                      )}
                   </span>
                 </button>
               ))}
-              {locations.filter(loc => 
+              {locations.filter(loc =>
                 loc.toLowerCase().includes(searchTerm.toLowerCase())
               ).length > 10 && (
-                <div className="px-3 py-2 text-xs text-gray-500 bg-gray-50 border-t">
-                  Showing top 10 results. Keep typing to narrow down...
-                </div>
-              )}
+                  <div className="px-3 py-2 text-xs text-gray-500 bg-gray-50 border-t">
+                    Showing top 10 results. Keep typing to narrow down...
+                  </div>
+                )}
             </>
           ) : searchTerm && (
             <div className="px-3 py-2 text-sm text-gray-500">
@@ -297,9 +297,8 @@ const PropertyCard = ({ item, toggleFavorite, favorites }) => {
 
           {/* Action Tag (Rent/Sale) */}
           <div
-            className={`absolute top-4 left-4 px-4 py-1 rounded text-white text-base font-medium ${
-              item.action === "Sell" ? "bg-blue-600" : "bg-purple-600"
-            }`}
+            className={`absolute top-4 left-4 px-4 py-1 rounded text-white text-base font-medium ${item.action === "Sell" ? "bg-blue-600" : "bg-purple-600"
+              }`}
           >
             {item.action === "Sell" ? "Sale" : "Rent"}
           </div>
@@ -387,7 +386,7 @@ function Listing({
   const [viewFilter, setViewFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true); // New state for initial page load
-  
+
   // Filter states for listing section with new property-specific fields
   const [tempFilters, setTempFilters] = useState({
     minPrice: '',
@@ -415,11 +414,11 @@ function Listing({
     shopHasParking: false,
     shopRoadType: ''
   });
-  
+
   // Store ALL fetched data from address search
   const [allAddressData, setAllAddressData] = useState([]);
   const [searchAddress, setSearchAddress] = useState(null);
-  
+
   const listingsContainerRef = useRef(null);
 
   // Get relevant filters based on property type
@@ -485,7 +484,7 @@ function Listing({
   // Simple filtering - NO memoization, always fresh logic
   const getFilteredListings = () => {
     let filteredData = [];
-    
+
     // SIMPLE LOGIC: Location search vs General search
     if (isSearchPerformed && searchAddress && allAddressData.length > 0) {
       // This is a LOCATION search - use location data
@@ -496,18 +495,18 @@ function Listing({
       console.log("🏠 Using GENERAL data from backend. Count:", (listing || []).length + (secondaryListings || []).length);
       filteredData = [...(listing || []), ...(secondaryListings || [])];
     }
-    
+
     console.log("📊 Base data before filtering:", filteredData.length);
 
     // Apply additional filters only if they have values
     if (locationFilter && locationFilter.trim()) {
       console.log("📍 Applying additional location filter:", locationFilter);
-      filteredData = filteredData.filter(item => 
+      filteredData = filteredData.filter(item =>
         item.address?.toLowerCase().includes(locationFilter.toLowerCase()) ||
         item.full_address?.toLowerCase().includes(locationFilter.toLowerCase())
       );
     }
-    
+
     if (roomsCount > 0) {
       filteredData = filteredData.filter(item => (item.rooms || 0) >= roomsCount);
     }
@@ -517,7 +516,7 @@ function Listing({
     if (parkingCount > 0) {
       filteredData = filteredData.filter(item => (item.parking || 0) >= parkingCount);
     }
-    
+
     // Price range filter
     if (priceRange?.length === 2 && (priceRange[0] > 0 || priceRange[1] < Infinity)) {
       filteredData = filteredData.filter(item => {
@@ -525,7 +524,7 @@ function Listing({
         return price >= priceRange[0] && price <= priceRange[1];
       });
     }
-    
+
     // Apply sorting
     const sortBy = tempFilters.sortBy || 'newest';
     switch (sortBy) {
@@ -549,7 +548,7 @@ function Listing({
         filteredData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         break;
     }
-    
+
     console.log("📊 Final filtered data count:", filteredData.length);
     return filteredData;
   };
@@ -557,11 +556,11 @@ function Listing({
   // Filter by view tabs (all/sale/rent)
   const getDisplayListings = () => {
     const filteredData = getFilteredListings();
-    
+
     if (viewFilter === "all") return filteredData;
     if (viewFilter === "sale") return filteredData.filter(item => item.action === "Sell");
     if (viewFilter === "rent") return filteredData.filter(item => item.action === "Rent");
-    
+
     return filteredData;
   };
 
@@ -607,11 +606,11 @@ function Listing({
         .order("created_at", { ascending: false });
 
       // Check for location - be very strict about what counts as a location
-      const hasLocation = address && 
-                         address.label && 
-                         typeof address.label === 'string' && 
-                         address.label.trim() !== '' && 
-                         address.label.trim().length > 0;
+      const hasLocation = address &&
+        address.label &&
+        typeof address.label === 'string' &&
+        address.label.trim() !== '' &&
+        address.label.trim().length > 0;
 
       console.log("🔍 Has valid location?", hasLocation);
 
@@ -620,13 +619,13 @@ function Listing({
         const searchLocation = address.label.split(",")[0]?.trim();
         console.log("🔍 === LOCATION SEARCH ===");
         console.log("📍 Searching in location:", searchLocation);
-        
+
         query = query.ilike("address", `%${searchLocation}%`);
-        
+
         // Set location search state
         setIsSearchPerformed(true);
         setSearchAddress(searchLocation);
-        
+
         // Smart tab selection for location searches
         if (currentAction === "Sell") {
           setViewFilter("sale");
@@ -637,7 +636,7 @@ function Listing({
         // NO LOCATION - PROPERTY TYPE SEARCH
         console.log("🔍 === NO LOCATION - PROPERTY TYPE SEARCH ===");
         console.log("🏠 Searching for property type:", propertyType);
-        
+
         // Keep search state as false for property type searches
         setIsSearchPerformed(false);
         setSearchAddress(null);
@@ -666,7 +665,7 @@ function Listing({
         // Location search - store in allAddressData
         console.log("💾 Storing as LOCATION data");
         setAllAddressData(data || []);
-        
+
         // Clear parent state for location searches
         if (setListing) setListing([]);
         if (setSecondaryListings) setSecondaryListings([]);
@@ -674,7 +673,7 @@ function Listing({
         // Property type search - store in parent state
         console.log("💾 Storing as PROPERTY TYPE data");
         setAllAddressData([]); // Keep empty for property type searches
-        
+
         // Update parent state with fresh property type data
         if (setListing) setListing(data || []);
         if (setSecondaryListings) setSecondaryListings([]);
@@ -688,7 +687,7 @@ function Listing({
       // Fallback only for location searches with no results
       if (hasLocation && (!data || data.length === 0)) {
         console.log("🔍 Location search failed, trying Kathmandu fallback...");
-        
+
         let fallbackQuery = supabase
           .from("listing")
           .select("*, listingImages(url, listing_id)")
@@ -784,11 +783,10 @@ function Listing({
         <button
           key={page}
           onClick={() => handlePageChange(page)}
-          className={`px-3 py-1 text-sm rounded-md ${
-            currentPage === page
-              ? "bg-blue-600 text-white"
-              : "text-gray-700 hover:bg-gray-100"
-          }`}
+          className={`px-3 py-1 text-sm rounded-md ${currentPage === page
+            ? "bg-blue-600 text-white"
+            : "text-gray-700 hover:bg-gray-100"
+            }`}
         >
           {page}
         </button>
@@ -800,18 +798,18 @@ function Listing({
   const getActiveFiltersCount = () => {
     let count = 0;
     const relevant = getRelevantFilters(tempFilters.propertyType);
-    
+
     // Always count price, location and property type if set
     if (tempFilters.minPrice || tempFilters.maxPrice) count++;
     if (tempFilters.location && tempFilters.location.trim()) count++;
     if (tempFilters.propertyType !== 'All') count++;
     if (tempFilters.sortBy && tempFilters.sortBy !== 'newest') count++;
-    
+
     // Only count relevant filters
     if (relevant.showRooms && tempFilters.rooms > 0) count++;
     if (relevant.showBathrooms && tempFilters.bathrooms > 0) count++;
     if (relevant.showParking && tempFilters.parking > 0) count++;
-    
+
     // Property-specific filters
     if (relevant.showRoomType && tempFilters.roomType) count++;
     if (relevant.showParkingToggle && tempFilters.hasParking) count++;
@@ -819,7 +817,7 @@ function Listing({
     if (relevant.showFacing && tempFilters.houseFacing) count++;
     if (relevant.showRoadType && (tempFilters.houseRoadType || tempFilters.landRoadType || tempFilters.shopRoadType)) count++;
     if (relevant.showCustomArea && (tempFilters.houseArea || tempFilters.landArea || tempFilters.shopArea)) count++;
-    
+
     return count;
   };
 
@@ -832,7 +830,7 @@ function Listing({
     setParkingCount(tempFilters.parking);
     setPropertyType(tempFilters.propertyType);
     setLocationFilter(tempFilters.location || '');
-    
+
     // Set price range
     if (tempFilters.minPrice || tempFilters.maxPrice) {
       setPriceRange([
@@ -850,7 +848,7 @@ function Listing({
 
   const handleClearFilters = () => {
     const currentPropertyType = tempFilters.propertyType;
-    
+
     setTempFilters({
       minPrice: '',
       maxPrice: '',
@@ -877,7 +875,7 @@ function Listing({
       shopHasParking: false,
       shopRoadType: ''
     });
-    
+
     // Only reset filters that are relevant to current property type
     setRoomsCount(0);
     setBathRoomsCountLocal(0);
@@ -892,12 +890,12 @@ function Listing({
 
   // Watch for address changes and reset search state when cleared
   useEffect(() => {
-    const hasLocation = address && 
-                       address.label && 
-                       typeof address.label === 'string' && 
-                       address.label.trim() !== '' && 
-                       address.label.trim().length > 0;
-    
+    const hasLocation = address &&
+      address.label &&
+      typeof address.label === 'string' &&
+      address.label.trim() !== '' &&
+      address.label.trim().length > 0;
+
     if (!hasLocation) {
       console.log("🧹 Location cleared/empty - resetting location search state");
       setIsSearchPerformed(false);
@@ -935,7 +933,7 @@ function Listing({
   const fetchInitialData = async () => {
     console.log("🚀 === INITIAL PAGE LOAD - FETCHING ALL PROPERTIES ===");
     setIsInitialLoading(true);
-    
+
     try {
       const query = supabase
         .from("listing")
@@ -955,7 +953,7 @@ function Listing({
       // Store in parent state for default display
       if (setListing) setListing(data || []);
       if (setSecondaryListings) setSecondaryListings([]);
-      
+
       // Notify parent
       if (onAddressDataUpdate) {
         onAddressDataUpdate(data || []);
@@ -1007,21 +1005,19 @@ function Listing({
             <div className="flex mb-6 bg-white/20 rounded-lg p-1">
               <button
                 onClick={() => setCurrentAction("Sell")}
-                className={`flex-1 py-2 rounded-lg text-center font-medium ${
-                  currentAction === "Sell"
-                    ? "bg-blue-600 text-white"
-                    : "text-white hover:bg-white/20"
-                }`}
+                className={`flex-1 py-2 rounded-lg text-center font-medium ${currentAction === "Sell"
+                  ? "bg-blue-600 text-white"
+                  : "text-white hover:bg-white/20"
+                  }`}
               >
                 Buy Property
               </button>
               <button
                 onClick={() => setCurrentAction("Rent")}
-                className={`flex-1 py-2 rounded-lg text-center font-medium ${
-                  currentAction === "Rent"
-                    ? "bg-blue-600 text-white"
-                    : "text-white hover:bg-white/20"
-                }`}
+                className={`flex-1 py-2 rounded-lg text-center font-medium ${currentAction === "Rent"
+                  ? "bg-blue-600 text-white"
+                  : "text-white hover:bg-white/20"
+                  }`}
               >
                 Rent Property
               </button>
@@ -1121,12 +1117,12 @@ function Listing({
                     <MagnifyingGlassIcon className="h-6 w-6" />
                     <span>
                       {(() => {
-                        const hasLocation = address && 
-                                           address.label && 
-                                           typeof address.label === 'string' && 
-                                           address.label.trim() !== '' && 
-                                           address.label.trim().length > 0;
-                        
+                        const hasLocation = address &&
+                          address.label &&
+                          typeof address.label === 'string' &&
+                          address.label.trim() !== '' &&
+                          address.label.trim().length > 0;
+
                         if (hasLocation) {
                           return "Search Properties";
                         } else if (propertyType !== "All") {
@@ -1160,23 +1156,23 @@ function Listing({
                     </svg>
                   </div>
                 </div>
-                
+
                 {/* Loading Text */}
                 <div className="space-y-2">
                   <h3 className="text-lg font-semibold text-gray-900">
-                    {isInitialLoading ? "Loading Properties..." : 
-                     address?.label && address.label.trim() 
-                      ? "Searching Properties..." 
-                      : "Finding Properties..."
+                    {isInitialLoading ? "Loading Properties..." :
+                      address?.label && address.label.trim()
+                        ? "Searching Properties..."
+                        : "Finding Properties..."
                     }
                   </h3>
                   <p className="text-sm text-gray-600">
                     {isInitialLoading ? "Fetching all available properties from database" :
-                     address?.label && address.label.trim() ? 
-                      `Finding properties in ${address.label.split(",")[0]?.trim()}` :
-                      propertyType !== "All" ?
-                      `Finding all ${propertyType} properties` :
-                      "Fetching available properties"
+                      address?.label && address.label.trim() ?
+                        `Finding properties in ${address.label.split(",")[0]?.trim()}` :
+                        propertyType !== "All" ?
+                          `Finding all ${propertyType} properties` :
+                          "Fetching available properties"
                     }
                   </p>
                   <div className="flex items-center justify-center space-x-1 text-blue-600">
@@ -1189,20 +1185,20 @@ function Listing({
                 {/* Search Action Indicator */}
                 <div className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
                   {isInitialLoading ? "🏢 Loading all property listings" :
-                   address?.label && address.label.trim() ? (
-                    currentAction === "Sell" ? "🏠 Looking for properties to buy" : "🏘️ Looking for properties to rent"
-                  ) : (
-                    propertyType !== "All" ? `🔍 Searching all ${propertyType} properties` : "🔍 Searching all properties"
-                  )}
+                    address?.label && address.label.trim() ? (
+                      currentAction === "Sell" ? "🏠 Looking for properties to buy" : "🏘️ Looking for properties to rent"
+                    ) : (
+                      propertyType !== "All" ? `🔍 Searching all ${propertyType} properties` : "🔍 Searching all properties"
+                    )}
                 </div>
               </div>
             </div>
           </div>
         )}
 
-          <FeaturedProperties />
+        <FeaturedProperties />
 
-         <CTASection />
+        <CTASection />
         <div className="container mx-auto px-4">
           {/* All Properties Summary (when no filters) */}
           {!isSearchPerformed && !searchAddress && propertyType === "All" && !isInitialLoading && (listing || []).length > 0 && (
@@ -1227,11 +1223,10 @@ function Listing({
             <div className="flex gap-6">
               <button
                 onClick={() => setViewFilter("all")}
-                className={`pb-3 px-1 font-medium relative ${
-                  viewFilter === "all"
-                    ? "text-blue-600"
-                    : "text-gray-500 hover:text-gray-800"
-                }`}
+                className={`pb-3 px-1 font-medium relative ${viewFilter === "all"
+                  ? "text-blue-600"
+                  : "text-gray-500 hover:text-gray-800"
+                  }`}
               >
                 All Properties ({tabCounts.all})
                 {viewFilter === "all" && (
@@ -1240,11 +1235,10 @@ function Listing({
               </button>
               <button
                 onClick={() => setViewFilter("sale")}
-                className={`pb-3 px-1 font-medium relative ${
-                  viewFilter === "sale"
-                    ? "text-blue-600"
-                    : "text-gray-500 hover:text-gray-800"
-                }`}
+                className={`pb-3 px-1 font-medium relative ${viewFilter === "sale"
+                  ? "text-blue-600"
+                  : "text-gray-500 hover:text-gray-800"
+                  }`}
               >
                 For Sale ({tabCounts.sale})
                 {viewFilter === "sale" && (
@@ -1253,11 +1247,10 @@ function Listing({
               </button>
               <button
                 onClick={() => setViewFilter("rent")}
-                className={`pb-3 px-1 font-medium relative ${
-                  viewFilter === "rent"
-                    ? "text-blue-600"
-                    : "text-gray-500 hover:text-gray-800"
-                }`}
+                className={`pb-3 px-1 font-medium relative ${viewFilter === "rent"
+                  ? "text-blue-600"
+                  : "text-gray-500 hover:text-gray-800"
+                  }`}
               >
                 For Rent ({tabCounts.rent})
                 {viewFilter === "rent" && (
@@ -1294,11 +1287,10 @@ function Listing({
 
               {viewFilter !== "all" && (
                 <span
-                  className={`px-2 py-1 rounded-md ${
-                    viewFilter === "sale"
-                      ? "bg-blue-50 text-blue-800"
-                      : "bg-purple-50 text-purple-800"
-                  }`}
+                  className={`px-2 py-1 rounded-md ${viewFilter === "sale"
+                    ? "bg-blue-50 text-blue-800"
+                    : "bg-purple-50 text-purple-800"
+                    }`}
                 >
                   For {viewFilter === "sale" ? "Sale" : "Rent"}
                 </span>
@@ -1332,14 +1324,14 @@ function Listing({
               {/* Sort filter */}
               {tempFilters.sortBy && tempFilters.sortBy !== 'newest' && (
                 <span className="bg-gray-50 text-gray-800 px-2 py-1 rounded-md text-xs">
-                  Sort: {tempFilters.sortBy === 'price-low' ? 'Price Low-High' : 
-                         tempFilters.sortBy === 'price-high' ? 'Price High-Low' :
-                         tempFilters.sortBy === 'area-large' ? 'Area Large-Small' :
-                         tempFilters.sortBy === 'area-small' ? 'Area Small-Large' :
-                         tempFilters.sortBy === 'oldest' ? 'Oldest First' : tempFilters.sortBy}
+                  Sort: {tempFilters.sortBy === 'price-low' ? 'Price Low-High' :
+                    tempFilters.sortBy === 'price-high' ? 'Price High-Low' :
+                      tempFilters.sortBy === 'area-large' ? 'Area Large-Small' :
+                        tempFilters.sortBy === 'area-small' ? 'Area Small-Large' :
+                          tempFilters.sortBy === 'oldest' ? 'Oldest First' : tempFilters.sortBy}
                 </span>
               )}
-              
+
               {/* Property type specific hint */}
               {propertyType === 'Land' && (
                 <span className="bg-gray-50 text-gray-600 px-2 py-1 rounded-md text-xs italic">
@@ -1359,7 +1351,7 @@ function Listing({
               className={`
                 flex items-center gap-2 px-4 py-2 rounded-lg border transition-all duration-200
                 ${showListingFilters
-                  ? 'bg-blue-600 text-white border-blue-700 hover:bg-blue-700' 
+                  ? 'bg-blue-600 text-white border-blue-700 hover:bg-blue-700'
                   : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                 }
               `}
@@ -1372,7 +1364,7 @@ function Listing({
                 <span className={`
                   min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold flex items-center justify-center
                   ${showListingFilters
-                    ? 'bg-white text-blue-600' 
+                    ? 'bg-white text-blue-600'
                     : 'bg-blue-600 text-white'
                   }
                 `}>
@@ -1401,17 +1393,17 @@ function Listing({
                   )}
                 </h3>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {/* Property Type */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Property Type</label>
                   <select
                     value={tempFilters.propertyType}
-                    onChange={(e) => setTempFilters(prev => ({ 
-                      ...prev, 
+                    onChange={(e) => setTempFilters(prev => ({
+                      ...prev,
                       propertyType: e.target.value,
-                      roomType: '', 
+                      roomType: '',
                       rooms: 0,
                       bathrooms: 0,
                       parking: 0,
@@ -1513,14 +1505,12 @@ function Listing({
                       <div className="flex items-center space-x-3 mt-1">
                         <button
                           onClick={() => setTempFilters(prev => ({ ...prev, hasParking: !prev.hasParking }))}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            tempFilters.hasParking ? 'bg-blue-600' : 'bg-gray-200'
-                          }`}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${tempFilters.hasParking ? 'bg-blue-600' : 'bg-gray-200'
+                            }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              tempFilters.hasParking ? 'translate-x-6' : 'translate-x-1'
-                            }`}
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${tempFilters.hasParking ? 'translate-x-6' : 'translate-x-1'
+                              }`}
                           />
                         </button>
                         <span className="text-sm text-gray-600">
@@ -1528,22 +1518,23 @@ function Listing({
                         </span>
                       </div>
                     </div>
-
-                    {/* Water Type */}
+                    {/* Water Type (पानीको प्रकार) */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Water Type</label>
+                      <label className="text-sm font-medium text-gray-700">
+                        पानीको प्रकार (Water Type)
+                      </label>
                       <select
                         value={tempFilters.waterType || ''}
                         onChange={(e) => setTempFilters(prev => ({ ...prev, waterType: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
                       >
-                        <option value="">Any Water Type</option>
-                        <option value="Municipality">Municipality Water</option>
-                        <option value="Borewell">Borewell</option>
-                        <option value="Tank">Tank Water</option>
-                        <option value="Mixed">Mixed Sources</option>
+                        <option value="">पानीको प्रकार चयन गर्नुहोस्</option>
+                        <option value="24 hour water on tap">नलबाट २४ घण्टा पानी (24hr Water on Tap)</option>
+                        <option value="Storage water">ट्यांकीमा संचित पानी (Storage Water)</option>
+                        <option value="Inar water">इनार वा कुँडो पानी (Well Water)</option>
                       </select>
                     </div>
+
                   </div>
                 </div>
               )}
@@ -1599,7 +1590,7 @@ function Listing({
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Parking Toggle */}
                     <div className="space-y-2">
@@ -1607,14 +1598,12 @@ function Listing({
                       <div className="flex items-center space-x-3 mt-1">
                         <button
                           onClick={() => setTempFilters(prev => ({ ...prev, houseHasParking: !prev.houseHasParking }))}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            tempFilters.houseHasParking ? 'bg-blue-600' : 'bg-gray-200'
-                          }`}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${tempFilters.houseHasParking ? 'bg-blue-600' : 'bg-gray-200'
+                            }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              tempFilters.houseHasParking ? 'translate-x-6' : 'translate-x-1'
-                            }`}
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${tempFilters.houseHasParking ? 'translate-x-6' : 'translate-x-1'
+                              }`}
                           />
                         </button>
                         <span className="text-sm text-gray-600">
@@ -1691,23 +1680,25 @@ function Listing({
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                       />
                     </div>
-
-                    {/* Road Type */}
+                    {/* Road Type (बाटोको प्रकार) */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Road Type</label>
+                      <label className="text-sm font-medium text-gray-700">
+                        बाटोको प्रकार (Road Type)
+                      </label>
                       <select
                         value={tempFilters.landRoadType || ''}
-                        onChange={(e) => setTempFilters(prev => ({ ...prev, landRoadType: e.target.value }))}
+                        onChange={(e) => setTempFilters(prev => ({ ...presv, landRoadType: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
                       >
-                        <option value="">Any Road Type</option>
-                        <option value="Pitched Road">Pitched Road</option>
-                        <option value="Graveled Road">Graveled Road</option>
-                        <option value="Dirt Road">Dirt Road</option>
-                        <option value="Main Road">Main Road</option>
-                        <option value="Sub Road">Sub Road</option>
+                        <option value="">कुनै पनि बाटो (Any Road Type)</option>
+                        <option value="Pitched Road">पक्की बाटो (Pitched Road)</option>
+                        <option value="Graveled Road">ग्राभेल बाटो (Graveled Road)</option>
+                        <option value="Dirt Road">कच्ची बाटो (Dirt Road)</option>
+                        <option value="Main Road">मुख्य बाटो (Main Road)</option>
+                        <option value="Sub Road">सहायक बाटो (Sub Road)</option>
                       </select>
                     </div>
+
                   </div>
                 </div>
               )}
@@ -1735,14 +1726,12 @@ function Listing({
                       <div className="flex items-center space-x-3 mt-1">
                         <button
                           onClick={() => setTempFilters(prev => ({ ...prev, shopHasParking: !prev.shopHasParking }))}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            tempFilters.shopHasParking ? 'bg-blue-600' : 'bg-gray-200'
-                          }`}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${tempFilters.shopHasParking ? 'bg-blue-600' : 'bg-gray-200'
+                            }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              tempFilters.shopHasParking ? 'translate-x-6' : 'translate-x-1'
-                            }`}
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${tempFilters.shopHasParking ? 'translate-x-6' : 'translate-x-1'
+                              }`}
                           />
                         </button>
                         <span className="text-sm text-gray-600">
@@ -1753,18 +1742,20 @@ function Listing({
 
                     {/* Road Type */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Road Type</label>
+                    <label className="text-sm font-medium text-gray-700">
+                        बाटोको प्रकार (Road Type)
+                      </label>
                       <select
                         value={tempFilters.shopRoadType || ''}
                         onChange={(e) => setTempFilters(prev => ({ ...prev, shopRoadType: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
                       >
-                        <option value="">Any Road Type</option>
-                        <option value="Pitched Road">Pitched Road</option>
-                        <option value="Graveled Road">Graveled Road</option>
-                        <option value="Dirt Road">Dirt Road</option>
-                        <option value="Main Road">Main Road</option>
-                        <option value="Sub Road">Sub Road</option>
+                        <option value="">कुनै पनि बाटो (Any Road Type)</option>
+                        <option value="Pitched Road">पक्की बाटो (Pitched Road)</option>
+                        <option value="Graveled Road">ग्राभेल बाटो (Graveled Road)</option>
+                        <option value="Dirt Road">कच्ची बाटो (Dirt Road)</option>
+                        <option value="Main Road">मुख्य बाटो (Main Road)</option>
+                        <option value="Sub Road">सहायक बाटो (Sub Road)</option>
                       </select>
                     </div>
                   </div>
@@ -1828,11 +1819,10 @@ function Listing({
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className={`flex items-center px-3 py-1.5 border rounded-md text-sm ${
-                    currentPage === 1
-                      ? "text-gray-400 border-gray-200 cursor-not-allowed"
-                      : "text-gray-700 border-gray-300 hover:bg-gray-50"
-                  }`}
+                  className={`flex items-center px-3 py-1.5 border rounded-md text-sm ${currentPage === 1
+                    ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                    : "text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
                 >
                   <ChevronLeftIcon className="h-4 w-4 mr-1" />
                   <span>Previous</span>
@@ -1845,11 +1835,10 @@ function Listing({
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className={`flex items-center px-3 py-1.5 border rounded-md text-sm ${
-                    currentPage === totalPages
-                      ? "text-gray-400 border-gray-200 cursor-not-allowed"
-                      : "text-gray-700 border-gray-300 hover:bg-gray-50"
-                  }`}
+                  className={`flex items-center px-3 py-1.5 border rounded-md text-sm ${currentPage === totalPages
+                    ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                    : "text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
                 >
                   <span>Next</span>
                   <ChevronRightIcon className="h-4 w-4 ml-1" />
@@ -1873,7 +1862,7 @@ function Listing({
                   No properties found
                 </h3>
                 <p className="text-gray-500 mb-4">
-                  {isSearchPerformed 
+                  {isSearchPerformed
                     ? `No properties match your criteria in ${searchAddress}`
                     : "Try searching for a location to see properties"
                   }
@@ -1889,18 +1878,18 @@ function Listing({
                     setParkingCount(0);
                     setPriceRange(null);
                     setLocationFilter('');
-                    
+
                     // COMPLETELY reset search state
                     setIsSearchPerformed(false);
                     setSearchAddress(null);
                     setAllAddressData([]);
-                    
+
                     // Clear address input
                     setAddress(null);
-                    
+
                     // Reset filter state
                     handleClearFilters();
-                    
+
                     // Force parent to show default data
                     if (setListing) setListing([]);
                     if (setSecondaryListings) setSecondaryListings([]);
