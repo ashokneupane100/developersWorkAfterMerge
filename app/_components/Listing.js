@@ -1346,37 +1346,41 @@ function Listing({
             </div>
 
             {/* Filter Toggle Button */}
-            <button
-              onClick={() => setShowListingFilters(!showListingFilters)}
-              className={`
-                flex items-center gap-2 px-4 py-2 rounded-lg border transition-all duration-200
-                ${showListingFilters
-                  ? 'bg-blue-600 text-white border-blue-700 hover:bg-blue-700'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }
-              `}
-            >
-              <AdjustmentsHorizontalIcon className="h-4 w-4" />
-              <span className="font-medium">
-                {showListingFilters ? 'Hide Filters' : 'Show Filters'}
-              </span>
-              {activeFiltersCount > 0 && (
-                <span className={`
-                  min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold flex items-center justify-center
-                  ${showListingFilters
-                    ? 'bg-white text-blue-600'
-                    : 'bg-blue-600 text-white'
-                  }
-                `}>
-                  {activeFiltersCount}
-                </span>
-              )}
-              {showListingFilters ? (
-                <XMarkIcon className="h-4 w-4" />
-              ) : (
-                <ChevronLeftIcon className="h-4 w-4 transform rotate-90" />
-              )}
-            </button>
+            <div className="w-full flex flex-col items-center justify-center text-center my-8 px-4">
+              <p className="text-xl sm:text-2xl font-bold text-[#1a202c] mb-4 leading-snug">
+                🧐 तपाईको <span className="text-[#3b82f6]">बिशेष रोजाई</span> अझ गहिरोसंग खोज्न <br />
+                <span className="text-pink-600 font-extrabold">"Search Filter"</span> tab Click गर्नुहोस!
+              </p>
+
+              <button
+                onClick={() => setShowListingFilters(!showListingFilters)}
+                className={`
+      flex items-center gap-3 px-8 py-3 rounded-full text-lg font-semibold shadow-xl transition-all duration-300 transform hover:scale-105
+      bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 text-white
+      hover:from-pink-600 hover:via-red-600 hover:to-yellow-600
+    `}
+              >
+                <AdjustmentsHorizontalIcon className="h-6 w-6" />
+                <span>{showListingFilters ? 'Hide Filters' : 'Show Filters'}</span>
+
+                {activeFiltersCount > 0 && (
+                  <span className={`
+        min-w-[24px] h-6 px-2 rounded-full text-sm font-bold flex items-center justify-center
+        bg-white text-pink-600
+      `}>
+                    {activeFiltersCount}
+                  </span>
+                )}
+
+                {showListingFilters ? (
+                  <XMarkIcon className="h-5 w-5" />
+                ) : (
+                  <ChevronLeftIcon className="h-5 w-5 transform rotate-90" />
+                )}
+              </button>
+            </div>
+
+
           </div>
 
           {/* Advanced Filters Panel for Listings */}
@@ -1587,42 +1591,69 @@ function Listing({
 
               {/* House Features */}
               {tempFilters.propertyType === 'House' && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <h4 className="text-md font-medium text-gray-800 mb-3">घरसम्बन्धी विवरण (House Specific Fields)</h4>
+                <div className="mt-6 pt-6 border-t border-gray-300">
+                  <h4 className="text-xl font-semibold text-gray-800 mb-6 text-center">🏠 घरसम्बन्धी विवरण (House Specific Fields)</h4>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {/* Bedrooms & Bathrooms - Eye-catching center UI */}
+                  <div className="w-full flex flex-col sm:flex-row justify-center gap-6 mb-8">
                     {/* Bedrooms */}
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium text-gray-700">Bedrooms (शयनकक्ष)</label>
-                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                        <span className="text-sm text-gray-600">Min {tempFilters.rooms}</span>
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => setTempFilters(prev => ({ ...prev, rooms: Math.max(0, prev.rooms - 1) }))} className="w-6 h-6 border rounded text-sm">-</button>
-                          <span className="w-6 text-center">{tempFilters.rooms}</span>
-                          <button onClick={() => setTempFilters(prev => ({ ...prev, rooms: prev.rooms + 1 }))} className="w-6 h-6 border rounded text-sm">+</button>
-                        </div>
+                    <div className="flex flex-col items-center bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-md w-full max-w-xs hover:shadow-lg transition">
+                      <label className="text-md font-semibold text-blue-800 mb-2">शयनकक्ष (Bedrooms)</label>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() =>
+                            setTempFilters((prev) => ({ ...prev, rooms: Math.max(0, prev.rooms - 1) }))
+                          }
+                          className="w-10 h-10 rounded-full bg-white text-blue-600 font-bold border border-blue-400 hover:bg-blue-100 transition"
+                        >
+                          −
+                        </button>
+                        <span className="text-xl font-bold text-blue-800">{tempFilters.rooms}</span>
+                        <button
+                          onClick={() =>
+                            setTempFilters((prev) => ({ ...prev, rooms: prev.rooms + 1 }))
+                          }
+                          className="w-10 h-10 rounded-full bg-white text-blue-600 font-bold border border-blue-400 hover:bg-blue-100 transition"
+                        >
+                          +
+                        </button>
                       </div>
                     </div>
 
                     {/* Bathrooms */}
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium text-gray-700">Bathrooms (नुहाउने कोठा)</label>
-                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                        <span className="text-sm text-gray-600">Min {tempFilters.bathrooms}</span>
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => setTempFilters(prev => ({ ...prev, bathrooms: Math.max(0, prev.bathrooms - 1) }))} className="w-6 h-6 border rounded text-sm">-</button>
-                          <span className="w-6 text-center">{tempFilters.bathrooms}</span>
-                          <button onClick={() => setTempFilters(prev => ({ ...prev, bathrooms: prev.bathrooms + 1 }))} className="w-6 h-6 border rounded text-sm">+</button>
-                        </div>
+                    <div className="flex flex-col items-center bg-pink-50 border border-pink-200 rounded-xl p-4 shadow-md w-full max-w-xs hover:shadow-lg transition">
+                      <label className="text-md font-semibold text-pink-800 mb-2">नुहाउने कोठा (Bathrooms)</label>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() =>
+                            setTempFilters((prev) => ({ ...prev, bathrooms: Math.max(0, prev.bathrooms - 1) }))
+                          }
+                          className="w-10 h-10 rounded-full bg-white text-pink-600 font-bold border border-pink-400 hover:bg-pink-100 transition"
+                        >
+                          −
+                        </button>
+                        <span className="text-xl font-bold text-pink-800">{tempFilters.bathrooms}</span>
+                        <button
+                          onClick={() =>
+                            setTempFilters((prev) => ({ ...prev, bathrooms: prev.bathrooms + 1 }))
+                          }
+                          className="w-10 h-10 rounded-full bg-white text-pink-600 font-bold border border-pink-400 hover:bg-pink-100 transition"
+                        >
+                          +
+                        </button>
                       </div>
                     </div>
+                  </div>
 
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     {/* Parking Toggle */}
                     <div className="space-y-1">
                       <label className="text-sm font-medium text-gray-700">Parking Available (पार्किङ छ?)</label>
                       <div className="flex items-center space-x-3">
                         <button
-                          onClick={() => setTempFilters(prev => ({ ...prev, houseHasParking: !prev.houseHasParking }))}
+                          onClick={() =>
+                            setTempFilters((prev) => ({ ...prev, houseHasParking: !prev.houseHasParking }))
+                          }
                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${tempFilters.houseHasParking ? 'bg-blue-600' : 'bg-gray-300'
                             }`}
                         >
@@ -1637,9 +1668,10 @@ function Listing({
                       </div>
                     </div>
 
-                    {/* Parking Inputs – Only Show If Toggle is On */}
+                    {/* Show if parking is enabled */}
                     {tempFilters.houseHasParking && (
                       <>
+                        {/* Car Parking */}
                         <div className="space-y-1">
                           <label className="text-sm font-medium text-gray-700">Car Parking (कार पार्किङ संख्या)</label>
                           <input
@@ -1647,11 +1679,14 @@ function Listing({
                             min={0}
                             placeholder="e.g. 1"
                             value={tempFilters.houseCarParking || ''}
-                            onChange={(e) => setTempFilters(prev => ({ ...prev, houseCarParking: e.target.value }))}
+                            onChange={(e) =>
+                              setTempFilters((prev) => ({ ...prev, houseCarParking: e.target.value }))
+                            }
                             className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                           />
                         </div>
 
+                        {/* Bike Parking */}
                         <div className="space-y-1">
                           <label className="text-sm font-medium text-gray-700">Bike Parking (बाइक पार्किङ संख्या)</label>
                           <input
@@ -1659,7 +1694,9 @@ function Listing({
                             min={0}
                             placeholder="e.g. 2"
                             value={tempFilters.houseBikeParking || ''}
-                            onChange={(e) => setTempFilters(prev => ({ ...prev, houseBikeParking: e.target.value }))}
+                            onChange={(e) =>
+                              setTempFilters((prev) => ({ ...prev, houseBikeParking: e.target.value }))
+                            }
                             className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                           />
                         </div>
@@ -1673,7 +1710,7 @@ function Listing({
                         type="text"
                         placeholder="e.g., 2000"
                         value={tempFilters.houseArea || ''}
-                        onChange={(e) => setTempFilters(prev => ({ ...prev, houseArea: e.target.value }))}
+                        onChange={(e) => setTempFilters((prev) => ({ ...prev, houseArea: e.target.value }))}
                         className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                       />
                     </div>
@@ -1683,7 +1720,7 @@ function Listing({
                       <label className="text-sm font-medium text-gray-700">House Facing (घरको दिशा)</label>
                       <select
                         value={tempFilters.houseFacing || ''}
-                        onChange={(e) => setTempFilters(prev => ({ ...prev, houseFacing: e.target.value }))}
+                        onChange={(e) => setTempFilters((prev) => ({ ...prev, houseFacing: e.target.value }))}
                         className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm bg-white"
                       >
                         <option value="">Direction चयन गर्नुहोस्</option>
@@ -1703,7 +1740,7 @@ function Listing({
                       <label className="text-sm font-medium text-gray-700">Road Type (सडकको प्रकार)</label>
                       <select
                         value={tempFilters.houseRoadType || ''}
-                        onChange={(e) => setTempFilters(prev => ({ ...prev, houseRoadType: e.target.value }))}
+                        onChange={(e) => setTempFilters((prev) => ({ ...prev, houseRoadType: e.target.value }))}
                         className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm bg-white"
                       >
                         <option value="">सडक प्रकार चयन गर्नुहोस्</option>
@@ -1717,6 +1754,7 @@ function Listing({
                   </div>
                 </div>
               )}
+
 
 
 
