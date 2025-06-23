@@ -260,6 +260,22 @@ import FilterSection from "./FilterSection";
 import ActionToggle from "./ActionToggle";
 import FeaturedProperties from "./FeaturedProperties";
 
+const landBudgetOptions = [
+  "Under 50 Lakhs",
+  "50 Lakhs - 1 Crore",
+  "1 Crore - 2 Crores",
+  "2 Crores - 5 Crores",
+  "Above 5 Crores"
+];
+
+const roomBudgetOptions = [
+  "Under 10k",
+  "10k - 15k",
+  "15k - 20k",
+  "20k - 25k",
+  "Above 25k"
+];
+
 const PropertyCard = ({ item, toggleFavorite, favorites }) => {
   const propertyLocation =
     item.address
@@ -267,6 +283,9 @@ const PropertyCard = ({ item, toggleFavorite, favorites }) => {
       .filter((part) => !part.trim().toLowerCase().includes("nepal"))
       .join(",")
       .trim() || "Unknown Location";
+
+
+ 
 
   return (
     <div className="relative group bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100">
@@ -389,8 +408,7 @@ function Listing({
 
   // Filter states for listing section with new property-specific fields
   const [tempFilters, setTempFilters] = useState({
-    minPrice: '',
-    maxPrice: '',
+    
     rooms: 0,
     bathrooms: 0,
     parking: 0,
@@ -823,6 +841,35 @@ function Listing({
 
   const activeFiltersCount = getActiveFiltersCount();
 
+
+  const parsePriceRange = (type, label) => {
+    if (!label) return null;
+  
+    if (type === 'Room/Flat') {
+      switch (label) {
+        case 'Under 10k': return [0, 10000];
+        case '10k - 15k': return [10000, 15000];
+        case '15k - 20k': return [15000, 20000];
+        case '20k - 25k': return [20000, 25000];
+        case 'Above 25k': return [25000, Infinity];
+      }
+    }
+  
+    if (type === 'Land') {
+      switch (label) {
+        case 'Under 50 Lakhs': return [0, 5000000];
+        case '50 Lakhs - 1 Crore': return [5000000, 10000000];
+        case '1 Crore - 2 Crores': return [10000000, 20000000];
+        case '2 Crores - 5 Crores': return [20000000, 50000000];
+        case 'Above 5 Crores': return [50000000, Infinity];
+      }
+    }
+  
+    return null;
+  };
+  
+  
+
   // Apply filters from temp state
   const handleApplyFilters = () => {
     setRoomsCount(tempFilters.rooms);
@@ -831,15 +878,15 @@ function Listing({
     setPropertyType(tempFilters.propertyType);
     setLocationFilter(tempFilters.location || '');
 
-    // Set price range
-    if (tempFilters.minPrice || tempFilters.maxPrice) {
-      setPriceRange([
-        tempFilters.minPrice ? parseInt(tempFilters.minPrice) : 0,
-        tempFilters.maxPrice ? parseInt(tempFilters.maxPrice) : Infinity
-      ]);
-    } else {
-      setPriceRange(null);
-    }
+    const parsedRange = parsePriceRange(tempFilters.propertyType, tempFilters.priceRange);
+
+
+    // ✅ Set price range using parsedRange
+  if (parsedRange) {
+    setPriceRange(parsedRange);
+  } else {
+    setPriceRange(null);
+  }
 
     setIsFilterApplied(true);
     setShowListingFilters(false);
@@ -850,8 +897,7 @@ function Listing({
     const currentPropertyType = tempFilters.propertyType;
 
     setTempFilters({
-      minPrice: '',
-      maxPrice: '',
+     
       rooms: 0,
       bathrooms: 0,
       parking: 0,
@@ -1443,22 +1489,30 @@ function Listing({
 
                 {/* Price Range */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Price Range</label>
+                  <label className="text-sm font-medium text-gray-700">Price Range (select property type first)</label>
                   <div className="flex gap-2">
-                    <input
-                      type="number"
-                      placeholder="Min"
-                      value={tempFilters.minPrice}
-                      onChange={(e) => setTempFilters(prev => ({ ...prev, minPrice: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Max"
-                      value={tempFilters.maxPrice}
-                      onChange={(e) => setTempFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                    />
+                    {/* Price Range */}
+
+
+                    <select
+                      value={tempFilters.priceRange || ''}
+                      onChange={(e) =>
+                        setTempFilters((prev) => ({ ...prev, priceRange: e.target.value }))
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                      <option value="">Select Price Range</option>
+                      {tempFilters.propertyType === 'Room/Flat' &&
+                        roomBudgetOptions.map((range) => (
+                          <option key={range} value={range}>{range}</option>
+                        ))}
+                      {tempFilters.propertyType === 'Land' &&
+                        landBudgetOptions.map((range) => (
+                          <option key={range} value={range}>{range}</option>
+                        ))}
+                    </select>
+
+
                   </div>
                 </div>
 
