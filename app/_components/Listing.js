@@ -1767,14 +1767,44 @@ function Listing({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Area */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Area (sq ft)</label>
-                      <input
-                        type="text"
-                        placeholder="e.g., 5000"
-                        value={tempFilters.landArea || ''}
-                        onChange={(e) => setTempFilters(prev => ({ ...prev, landArea: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                      />
+                      <label className="text-sm font-medium text-gray-700">Area (क्षेत्रफल - Bigha/Ropani/Aana/Kattha)</label>
+                      {tempFilters.landArea === 'Custom' ? (
+                        <input
+                          type="text"
+                          placeholder="e.g., 2.5 Ropani, 3 Aana, 1.5 Bigha"
+                          value={tempFilters.customLandArea || ''}
+                          onChange={(e) => setTempFilters(prev => ({ ...prev, customLandArea: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        />
+                      ) : (
+                        <select
+                          value={tempFilters.landArea || ''}
+                          onChange={(e) => setTempFilters(prev => ({ ...prev, landArea: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                        >
+                          <option value="">क्षेत्रफल चयन गर्नुहोस् (Select Area)</option>
+                          <option value="1 Aana">1 Aana</option>
+                          <option value="2 Aana">2 Aana</option>
+                          <option value="3 Aana">3 Aana</option>
+                          <option value="4 Aana">4 Aana</option>
+                          <option value="1 Kattha">1 Kattha</option>
+                          <option value="2 Kattha">2 Kattha</option>
+                          <option value="3 Kattha">3 Kattha</option>
+                          <option value="4 Kattha">4 Kattha</option>
+                          <option value="5 Kattha">5 Kattha</option>
+                          <option value="1 Ropani">1 Ropani</option>
+                          <option value="2 Ropani">2 Ropani</option>
+                          <option value="3 Ropani">3 Ropani</option>
+                          <option value="4 Ropani">4 Ropani</option>
+                          <option value="5 Ropani">5 Ropani</option>
+                          <option value="1 Bigha">1 Bigha</option>
+                          <option value="2 Bigha">2 Bigha</option>
+                          <option value="3 Bigha">3 Bigha</option>
+                          <option value="4 Bigha">4 Bigha</option>
+                          <option value="5 Bigha">5 Bigha</option>
+                          <option value="Custom">अन्य (Custom)</option>
+                        </select>
+                      )}
                     </div>
                     {/* Road Type (बाटोको प्रकार) */}
                     <div className="space-y-2">
