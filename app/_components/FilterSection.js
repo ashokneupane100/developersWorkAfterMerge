@@ -25,23 +25,66 @@ function FilterSection({
     };
 
     const getPriceRanges = () => {
+        // Rent-based options
         if (currentAction === "Rent") {
+            if (propertyType === "Room/Flat") {
+                return [
+                    { label: "Select Budget", value: "0-10000000000", isPlaceholder: true },
+                    { label: "Rs 1 – Rs 10K", value: "0-10000" },
+                    { label: "Rs 10K – Rs 15K", value: "10000-15000" },
+                    { label: "Rs 15K – Rs 20K", value: "15000-20000" },
+                    { label: "Rs 20K – Rs 25K", value: "20000-25000" },
+                    { label: "Above Rs 25K", value: "25000-100000000" }
+                ];
+            }
+    
+            if (propertyType === "House") {
+                return [
+                    { label: "Select Budget", value: "0-10000000000", isPlaceholder: true },
+                    { label: "Rs 20K – Rs 40K", value: "20000-40000" },
+                    { label: "Rs 40K – Rs 60K", value: "40000-60000" },
+                    { label: "Rs 60K – Rs 80K", value: "60000-80000" },
+                    { label: "Above Rs 80K", value: "80000-100000000" }
+                ];
+            }
+    
+            if (propertyType === "Shop") {
+                return [
+                    { label: "Select Budget", value: "0-10000000000", isPlaceholder: true },
+                    { label: "Rs 10K – Rs 25K", value: "10000-25000" },
+                    { label: "Rs 25K – Rs 50K", value: "25000-50000" },
+                    { label: "Above Rs 50K", value: "50000-100000000" }
+                ];
+            }
+    
             return [
                 { label: "Select Budget", value: "0-10000000000", isPlaceholder: true },
-                { label: <span>From Rs 1 to Rs 10K</span>, value: "0-100000000" },
-                { label: "From 10K and above", value: "10000-10000000000" },
-                { label: "From Rs 20K and above", value: "20000-10000000" },
-                { label: "From Rs 30K and above", value: "30000-10000000" }
+                { label: "Rs 1 – Rs 10K", value: "0-10000" },
+                { label: "Rs 10K – Rs 20K", value: "10000-20000" },
+                { label: "Above Rs 20K", value: "20000-100000000" }
             ];
         }
+    
+        // Sell-based options (Buyers)
+        if (propertyType === "Land") {
+            return [
+                { label: "Select Budget", value: "0-10000000000", isPlaceholder: true },
+                { label: "Below 50 Lakhs", value: "0-5000000" },
+                { label: "50 Lakhs – 1 Crore", value: "5000000-10000000" },
+                { label: "1 – 2 Crores", value: "10000000-20000000" },
+                { label: "Above 2 Crores", value: "20000000-1000000000" }
+            ];
+        }
+    
         return [
             { label: "Select Budget", value: "0-10000000000", isPlaceholder: true },
-            { label: "Up to 1 Crore", value: "0-100000000000" },
-            { label: "Above 1 Crore", value: "10000000-100000000000" },
-            { label: "Above 5 Crore", value: "50000000-100000000000" },
-            { label: "Above 10 Crore", value: "100000000-1000000000000" }
+            { label: "Up to 1 Crore", value: "0-10000000" },
+            { label: "1 – 2 Crores", value: "10000000-20000000" },
+            { label: "2 – 5 Crores", value: "20000000-50000000" },
+            { label: "Above 5 Crores", value: "50000000-1000000000" }
         ];
     };
+    
 
     const getFilterConfig = () => {
         const priceFilter = {

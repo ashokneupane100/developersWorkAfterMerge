@@ -12,6 +12,7 @@ const SmartLocationSearch = ({ value, onChange, placeholder = "Enter location...
   const [filteredLocations, setFilteredLocations] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  
   const searchRef = useRef(null);
   const dropdownRef = useRef(null);
 
@@ -390,6 +391,7 @@ function Listing({
   onAddressDataUpdate,
 }) {
   const [address, setAddress] = useState();
+  const [area, setArea] = useState('');
   const [isSearchPerformed, setIsSearchPerformed] = useState(false);
   const [favorites, setFavorites] = useState([]);
   const [roomsCount, setRoomsCount] = useState(0);
