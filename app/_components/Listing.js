@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/utils/supabase/client";
 import CTASection from "./CTASection";
 import LocationUpdater from "./geolocation/LocationUpdater";
+import NearbyListings from "./geolocation/NeaarbyListings";
 
 // Smart Location Search Component
 const SmartLocationSearch = ({ value, onChange, placeholder = "Enter location..." }) => {
@@ -1236,6 +1237,7 @@ function Listing({
         )}
 
         <FeaturedProperties />
+        <NearbyListings />
 
         {/* <CTASection /> */}
         <div className="container mx-auto px-4">
