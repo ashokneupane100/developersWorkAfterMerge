@@ -1,71 +1,96 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { supabase } from "@/utils/supabase/client";
 
 const LocationUpdater = () => {
-  const [status, setStatus] = useState("idle");
+  const getAddressFromCoords = async (lat: number, lng: number): Promise<string | null> => {
+    try {
+      const apiKey = process.env.GEO_API_KEY || "AIzaSyCVIoYXA9Ky4q8dXYv72wblihwZmN8xVdc";
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.status === "OK" && data.results?.length > 0) {
+        return data.results[0].formatted_address;
+      } else {
+        console.warn("⚠️ No address returned. Status:", data.status);
+      }
+    } catch (err) {
+      console.error("❌ Error during reverse geocoding:", err);
+    }
+    return null;
+  };
 
   useEffect(() => {
-    const updateLocation = async () => {
-      if (!navigator.geolocation) {
-        setStatus("Geolocation not supported.");
+    const updateProfileLocation = async (latitude: number, longitude: number) => {
+      const email =
+        typeof window !== "undefined" &&
+        (sessionStorage.getItem("email") || localStorage.getItem("email"));
+
+      if (!email) {
+        console.log("ℹ️ No email in session/localStorage. Skipping location update.");
         return;
       }
 
-      setStatus("Requesting location...");
+      const address = await getAddressFromCoords(latitude, longitude);
+
+      // ✅ Update the user's profile by email
+      const { data, error } = await supabase
+        .from("profiles")
+        .update({
+          latitude,
+          longitude,
+          full_address: address,
+          location_permission: true,
+          location_updated_at: new Date().toISOString(),
+        })
+        .eq("email", email)
+        .select();
+
+      if (error) {
+        console.error("❌ Failed to update user profile:", error);
+      } else {
+        console.log("✅ User profile updated with location:", data);
+      }
+    };
+
+    const requestLocation = () => {
+      const emailExists =
+        typeof window !== "undefined" &&
+        (sessionStorage.getItem("email") || localStorage.getItem("email"));
+
+      if (!emailExists) return;
+
+      if (!navigator.geolocation) {
+        console.warn("❌ Geolocation is not supported.");
+        return;
+      }
 
       navigator.geolocation.getCurrentPosition(
-        async (position) => {
+        (position) => {
           const { latitude, longitude } = position.coords;
-
-          // ✅ Console log for testing
-          console.log("📍 Latitude:", latitude);
-          console.log("📍 Longitude:", longitude);
-
-          // Get the current user
-          const {
-            data: { user },
-            error: authError,
-          } = await supabase.auth.getUser();
-
-          if (authError || !user) {
-            setStatus("Failed to get user.");
+          if (latitude === 0 && longitude === 0) {
+            console.warn("⚠️ Invalid coordinates, skipping update.");
             return;
           }
-
-          const { error: updateError } = await supabase
-            .from("profiles")
-            .update({
-              latitude,
-              longitude,
-              location_permission: true,
-              location_updated_at: new Date().toISOString(),
-            })
-            .eq("id", user.id);
-
-          if (updateError) {
-            setStatus("Error updating location.");
-            console.error(updateError);
-          } else {
-            setStatus("Location updated successfully ✅");
-          }
+          updateProfileLocation(latitude, longitude);
         },
         (error) => {
-          setStatus("Location access denied ❌");
-          console.error("❌ Geolocation error:", error);
+          console.error("❌ Geolocation error:", error.message);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
         }
       );
     };
 
-    updateLocation();
-  }, []);
+    requestLocation(); // Trigger on page load
+  });
 
-  return (
-    <div className="text-sm text-gray-600 p-2">
-      <p>{status === "idle" ? "Checking location..." : status}</p>
-    </div>
-  );
+  return null;
 };
 
 export default LocationUpdater;

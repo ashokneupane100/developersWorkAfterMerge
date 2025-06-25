@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { supabase } from "@/utils/supabase/client";
 import CTASection from "./CTASection";
+import LocationUpdater from "./geolocation/LocationUpdater";
 
 // Smart Location Search Component
 const SmartLocationSearch = ({ value, onChange, placeholder = "Enter location..." }) => {
@@ -121,8 +122,7 @@ const SmartLocationSearch = ({ value, onChange, placeholder = "Enter location...
     // Use enhanced fuzzy search
     const filtered = fuzzySearch(searchTerm, locations).slice(0, 10);
 
-    console.log('Search term:', searchTerm);
-    console.log('Filtered results:', filtered);
+    
 
     setFilteredLocations(filtered);
     // Show dropdown only if focused and has results
@@ -508,19 +508,18 @@ function Listing({
     // SIMPLE LOGIC: Location search vs General search
     if (isSearchPerformed && searchAddress && allAddressData.length > 0) {
       // This is a LOCATION search - use location data
-      console.log("📍 Using LOCATION data from:", searchAddress, "Count:", allAddressData.length);
+     
       filteredData = [...allAddressData];
     } else {
       // This is a GENERAL search (no location) - use fresh backend data
-      console.log("🏠 Using GENERAL data from backend. Count:", (listing || []).length + (secondaryListings || []).length);
+  
       filteredData = [...(listing || []), ...(secondaryListings || [])];
     }
 
-    console.log("📊 Base data before filtering:", filteredData.length);
 
     // Apply additional filters only if they have values
     if (locationFilter && locationFilter.trim()) {
-      console.log("📍 Applying additional location filter:", locationFilter);
+     
       filteredData = filteredData.filter(item =>
         item.address?.toLowerCase().includes(locationFilter.toLowerCase()) ||
         item.full_address?.toLowerCase().includes(locationFilter.toLowerCase())
@@ -569,7 +568,7 @@ function Listing({
         break;
     }
 
-    console.log("📊 Final filtered data count:", filteredData.length);
+
     return filteredData;
   };
 
@@ -601,18 +600,13 @@ function Listing({
 
   // Fetch data - ALWAYS fetch fresh from backend
   const handleSearch = async () => {
-    console.log("🔍 === STARTING FRESH SEARCH ===");
-    console.log("📍 Address object:", address);
-    console.log("📍 Address label:", address?.label);
-    console.log("🏠 Property Type:", propertyType);
-    console.log("🏷️ Current Action:", currentAction);
+  
 
     setIsLoading(true);
     setCurrentPage(1);
     scrollToListing();
 
-    // ALWAYS clear ALL old data first - complete reset
-    console.log("🧹 CLEARING ALL OLD DATA");
+ 
     setAllAddressData([]);
     setSearchAddress(null);
     setIsSearchPerformed(false);
@@ -632,13 +626,11 @@ function Listing({
         address.label.trim() !== '' &&
         address.label.trim().length > 0;
 
-      console.log("🔍 Has valid location?", hasLocation);
 
       if (hasLocation) {
         // LOCATION-BASED SEARCH
         const searchLocation = address.label.split(",")[0]?.trim();
-        console.log("🔍 === LOCATION SEARCH ===");
-        console.log("📍 Searching in location:", searchLocation);
+   
 
         query = query.ilike("address", `%${searchLocation}%`);
 
@@ -654,8 +646,7 @@ function Listing({
         }
       } else {
         // NO LOCATION - PROPERTY TYPE SEARCH
-        console.log("🔍 === NO LOCATION - PROPERTY TYPE SEARCH ===");
-        console.log("🏠 Searching for property type:", propertyType);
+ 
 
         // Keep search state as false for property type searches
         setIsSearchPerformed(false);
@@ -664,12 +655,11 @@ function Listing({
 
       // Add property type filter if not "All"
       if (propertyType && propertyType !== "All") {
-        console.log("🏠 Adding property type filter:", propertyType);
         query = query.eq("propertyType", propertyType);
       }
 
       // EXECUTE THE QUERY
-      console.log("⚡ Executing Supabase query...");
+     
       const { data, error } = await query;
 
       if (error) {
@@ -677,13 +667,12 @@ function Listing({
         throw error;
       }
 
-      console.log(`✅ SUCCESS - Found ${data?.length || 0} properties`);
-      console.log("📊 Query results:", data);
+     
 
       // Store the results based on search type
       if (hasLocation) {
         // Location search - store in allAddressData
-        console.log("💾 Storing as LOCATION data");
+       
         setAllAddressData(data || []);
 
         // Clear parent state for location searches
@@ -691,7 +680,7 @@ function Listing({
         if (setSecondaryListings) setSecondaryListings([]);
       } else {
         // Property type search - store in parent state
-        console.log("💾 Storing as PROPERTY TYPE data");
+       
         setAllAddressData([]); // Keep empty for property type searches
 
         // Update parent state with fresh property type data
@@ -706,7 +695,7 @@ function Listing({
 
       // Fallback only for location searches with no results
       if (hasLocation && (!data || data.length === 0)) {
-        console.log("🔍 Location search failed, trying Kathmandu fallback...");
+       
 
         let fallbackQuery = supabase
           .from("listing")
@@ -727,7 +716,7 @@ function Listing({
           if (onAddressDataUpdate) {
             onAddressDataUpdate(fallbackData);
           }
-          console.log(`✅ Fallback success: ${fallbackData.length} properties in Kathmandu`);
+         
         }
       }
 
@@ -741,7 +730,7 @@ function Listing({
       if (setSecondaryListings) setSecondaryListings([]);
     } finally {
       setIsLoading(false);
-      console.log("🔍 === SEARCH COMPLETE ===");
+        
     }
   };
 
@@ -945,7 +934,6 @@ function Listing({
       address.label.trim().length > 0;
 
     if (!hasLocation) {
-      console.log("🧹 Location cleared/empty - resetting location search state");
       setIsSearchPerformed(false);
       setSearchAddress(null);
       setAllAddressData([]);
@@ -979,7 +967,7 @@ function Listing({
 
   // Fetch all properties on initial page load
   const fetchInitialData = async () => {
-    console.log("🚀 === INITIAL PAGE LOAD - FETCHING ALL PROPERTIES ===");
+   
     setIsInitialLoading(true);
 
     try {
@@ -996,7 +984,7 @@ function Listing({
         throw error;
       }
 
-      console.log(`✅ INITIAL LOAD - Found ${data?.length || 0} total properties`);
+     
 
       // Store in parent state for default display
       if (setListing) setListing(data || []);
@@ -1019,7 +1007,7 @@ function Listing({
       if (setSecondaryListings) setSecondaryListings([]);
     } finally {
       setIsInitialLoading(false);
-      console.log("🚀 === INITIAL LOAD COMPLETE ===");
+     
     }
   };
 
@@ -1029,6 +1017,9 @@ function Listing({
   }, []); // Empty dependency array - runs only once on mount
 
   return (
+    <>  
+    <LocationUpdater />
+    
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section with Integrated Search */}
       <div
@@ -1098,7 +1089,7 @@ function Listing({
                 <div className="bg-white rounded-lg">
                   <OpenStreetMapSearch
                     selectedAddress={(v) => {
-                      console.log("📍 Location selected/changed:", v);
+                      
                       searchedAddress(v);
                       setAddress(v);
                       // Always reset search state when location changes
@@ -1246,7 +1237,7 @@ function Listing({
 
         <FeaturedProperties />
 
-        <CTASection />
+        {/* <CTASection /> */}
         <div className="container mx-auto px-4">
           {/* All Properties Summary (when no filters) */}
           {!isSearchPerformed && !searchAddress && propertyType === "All" && !isInitialLoading && (listing || []).length > 0 && (
@@ -2091,7 +2082,6 @@ function Listing({
                 </p>
                 <button
                   onClick={() => {
-                    console.log("🧹 CLEARING ALL FILTERS AND DATA");
                     // Reset all filters
                     setViewFilter("all");
                     setPropertyType("All");
@@ -2126,6 +2116,8 @@ function Listing({
         </div>
       </div>
     </div>
+    
+    </>
   );
 }
 

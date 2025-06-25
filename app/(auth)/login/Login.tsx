@@ -73,22 +73,34 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-
+  
     try {
-      // Clear any stored credentials before attempting login
-      // This helps ensure we're not using cached credentials
       clearStoredCredentials();
-      
+  
       const result = await signInWithCredentials(email, password, {
         redirect: false,
       });
-
+  
       if (result?.error) {
         setError("Invalid email or password");
         setIsLoading(false);
       } else {
-        router.push("/add-new-listing");
-        router.refresh();
+        const { token, user } = result; // Ensure your auth method returns these
+  
+        if (typeof window !== "undefined") {
+          // Store in sessionStorage
+          sessionStorage.setItem("email", email);
+  
+          // Store in localStorage (optional for persistence)
+          localStorage.setItem("email", email);
+  
+          // Store in cookies (basic client-side cookie)
+          document.cookie = `email=${email}; path=/`;
+        }
+  
+        // Redirect to homepage and reload
+        window.location.href = "/";
+
       }
     } catch (err) {
       setError("An error occurred during login");
@@ -96,7 +108,7 @@ const Login = () => {
       setIsLoading(false);
     }
   };
-
+  
   return (
     <div className="flex justify-center items-center min-h-screen bg-primary/20 p-4">
       <Card className="w-full max-w-md shadow-md bg-white rounded-xl p-6">
