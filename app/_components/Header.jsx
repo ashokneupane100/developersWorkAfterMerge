@@ -14,7 +14,7 @@ import {
 import { FiPhoneCall } from 'react-icons/fi';
 import { Button } from "@heroui/react";
 import { useAuth } from "../../components/Provider/useAuth"
-
+import logo from "../../public/assets/images/homeLogo.png";
 // Custom Dropdown Components
 const CustomDropdown = ({ trigger, children }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -111,9 +111,9 @@ const Header = memo(function Header() {
           <Link href="/" prefetch={false}>
             <div className="flex items-center">
               <Image 
-                src="/homeLogo.jpg" 
-                width={32} 
-                height={32} 
+                src={logo} 
+                width={140} 
+                height={140} 
                 alt="logo" 
                 priority 
                 className="object-contain" 
@@ -228,12 +228,12 @@ const Header = memo(function Header() {
             <Link href="/" prefetch={false}>
               <div className="flex items-center">
                 <Image
-                  src="/logo.png"
-                  width={24}
-                  height={24}
+                  src={logo}
+                  width={500}
+                  height={500}
                   alt="logo"
                   priority
-                  className="object-contain"
+                  className="object-contain w-50 h-50"
                 />
                 <h1 className="ml-2 font-bold text-green-800 text-lg leading-tight">
                   onlinehome
