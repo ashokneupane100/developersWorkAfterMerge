@@ -199,7 +199,8 @@ function OpenStreetMapSearch({ selectedAddress, setCoordinates }) {
             className={`w-full p-3 pl-4 border rounded-r-lg outline-none text-gray-800 ${
               isFocused ? "border-purple-400 shadow-md" : "border-gray-200"
             } focus:ring-2 focus:ring-purple-200`}
-            placeholder="Search locations in Kathmandu Valley"
+            placeholder="Search location across Nepal / नेपालभरका स्थानहरू खोज्नुहोस्"
+
           />
           <Search
             className={`absolute right-3 w-5 h-5 ${

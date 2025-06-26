@@ -5,13 +5,13 @@ import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import Slider from "../_components/Slider";
 import Details from "../_components/Details";
-import { 
-  EyeIcon, 
-  MapPinIcon, 
-  ClockIcon, 
-  CurrencyRupeeIcon, 
+import {
+  EyeIcon,
+  MapPinIcon,
+  ClockIcon,
+  CurrencyRupeeIcon,
   ShareIcon,
-  HeartIcon as HeartIconOutline
+  HeartIcon as HeartIconOutline,
 } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
 import { PhoneIcon, CalendarIcon } from "@heroicons/react/24/solid";
@@ -21,7 +21,8 @@ import { formatCurrency } from "@/components/helpers/formatCurrency";
 function ViewListing({ params }) {
   const [listingDetail, setListingDetail] = useState();
   const [id, setId] = useState();
-  const [timeUntilVacant, setTimeUntilVacant] = useState({ days: 0, hours: 0, minutes: 0 });
+  const [timeUntilVacant, setTimeUntilVacant] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [showVacancyCountdown, setShowVacancyCountdown] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -86,6 +87,32 @@ function ViewListing({ params }) {
     }
   }, [id]);
 
+  useEffect(() => {
+    if (!listingDetail?.khali_hune_date) return;
+
+    const updateCountdown = () => {
+      const now = new Date();
+      const vacancyDate = new Date(listingDetail.khali_hune_date);
+      const timeDifference = vacancyDate - now;
+
+      if (timeDifference > 0) {
+        const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
+        setTimeUntilVacant({ days, hours, minutes, seconds });
+        setShowVacancyCountdown(true);
+      } else {
+        setTimeUntilVacant({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        setShowVacancyCountdown(false);
+      }
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [listingDetail?.khali_hune_date]);
+
   const formatNumber = (num) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
@@ -105,41 +132,18 @@ function ViewListing({ params }) {
 
   const handleShare = () => {
     if (navigator.share) {
-      navigator.share({
-        title: listingDetail?.post_title || 'Property Listing',
-        text: `Check out this ${listingDetail?.propertyType || 'property'} on OnlineHome Nepal!`,
-        url: window.location.href,
-      })
-      .catch((error) => console.log('Error sharing', error));
+      navigator
+        .share({
+          title: listingDetail?.post_title || "Property Listing",
+          text: `Check out this ${listingDetail?.propertyType || "property"} on OnlineHome Nepal!`,
+          url: window.location.href,
+        })
+        .catch((error) => console.log("Error sharing", error));
     } else {
-      // Fallback for browsers that don't support the Web Share API
       navigator.clipboard.writeText(window.location.href);
       toast.success("Link copied to clipboard");
     }
   };
-
-  // Update time ticker
-  useEffect(() => {
-    if (listingDetail?.khali_hune_date) {
-      const interval = setInterval(() => {
-        const now = new Date();
-        const vacancyDate = new Date(listingDetail.khali_hune_date);
-        const timeDifference = vacancyDate - now;
-
-        if (timeDifference > 0) {
-          const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
-          const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-          const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
-
-          setTimeUntilVacant({ days, hours, minutes });
-        } else {
-          setTimeUntilVacant({ days: 0, hours: 0, minutes: 0 });
-        }
-      }, 60000); // Update every minute
-
-      return () => clearInterval(interval);
-    }
-  }, [listingDetail?.khali_hune_date]);
 
   if (loading) {
     return (
@@ -151,6 +155,8 @@ function ViewListing({ params }) {
       </div>
     );
   }
+
+
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
@@ -179,7 +185,7 @@ function ViewListing({ params }) {
 
       <div className="max-w-6xl mx-auto px-4 pt-5">
         {/* Time Ticker (if property will be vacant soon) */}
-        {listingDetail?.khali_hune_date && (
+        {listingDetail?.khali_hune_date && showVacancyCountdown && (
           <div className="mb-6 bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 rounded-lg shadow-sm p-4">
             <div className="flex items-center gap-3">
               <div className="bg-amber-200 p-2 rounded-full text-amber-800">
@@ -188,17 +194,16 @@ function ViewListing({ params }) {
               <div>
                 <h3 className="text-amber-800 font-semibold mb-1">Property Available Soon</h3>
                 <p className="text-amber-900">
-                  This property will be vacant in{" "}
+                  This property will be vacant in {" "}
                   <span className="font-bold">
-                    {timeUntilVacant.days} days, {timeUntilVacant.hours} hours
-                  </span>. 
-                  Call immediately for booking and inspection.
+                    {timeUntilVacant.days} days, {timeUntilVacant.hours} hours, {timeUntilVacant.minutes} minutes, {timeUntilVacant.seconds} seconds
+                  </span>
+                  . Call immediately for booking and inspection.
                 </p>
               </div>
             </div>
           </div>
         )}
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column: Images & Property Details */}
           <div className="lg:col-span-2 space-y-6">
