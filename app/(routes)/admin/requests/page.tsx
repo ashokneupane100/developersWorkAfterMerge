@@ -1,8 +1,15 @@
 "use client"
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Search, FileText, Phone, Mail, User, MapPin, DollarSign, Eye, CheckCircle, XCircle, Calendar, Trash2, X, AlertCircle, MoreHorizontal, CheckSquare } from 'lucide-react';
+import {toast, Toaster } from "react-hot-toast"
+import {
+  Search, FileText, Phone, Mail, User, MapPin, DollarSign, Eye,
+  CheckCircle, XCircle, Calendar, Trash2, X, AlertCircle,
+  MoreHorizontal, CheckSquare,
+  SquarePen
+} from 'lucide-react';
 import AdminDashboard from '@/components/admin/AdminDashboard';
+
 
 interface PropertyRequest {
   id: string;
@@ -31,12 +38,13 @@ const RequestsPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
   const [showStatusModal, setShowStatusModal] = useState<boolean>(false);
+  const [showEditModal, setShowEditModal] = useState<boolean>(false);
   const [selectedRequest, setSelectedRequest] = useState<PropertyRequest | null>(null);
   const [statusNotes, setStatusNotes] = useState<string>('');
-  
+  const [editFormData, setEditFormData] = useState<Partial<PropertyRequest>>({});
+
   const supabase = createClient();
-  
-  // Define status options with colors
+
   const statusOptions = [
     { value: 'pending', label: 'Pending', color: 'bg-yellow-100 text-yellow-800', icon: <AlertCircle className="h-4 w-4" /> },
     { value: 'processed', label: 'Processed', color: 'bg-blue-100 text-blue-800', icon: <CheckSquare className="h-4 w-4" /> },
@@ -51,10 +59,7 @@ const RequestsPage: React.FC = () => {
 
   async function fetchRequests() {
     try {
-      const { data, error } = await supabase
-        .from('property_requests')
-        .select('*')
-          
+      const { data, error } = await supabase.from('property_requests').select('*');
       if (error) throw error;
       setRequests(data || []);
     } catch (error) {
@@ -65,51 +70,31 @@ const RequestsPage: React.FC = () => {
   }
 
   const filteredRequests = requests.filter(request => {
-    // Search filter
-    const matchesSearch = 
-      request.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const matchesSearch =
+      request.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.location?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    // Status filter
-    const matchesStatus = 
-      statusFilter === 'all' || 
-      request.status === statusFilter;
-    
+
+    const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  // Open Status Update Modal
   const handleStatusUpdateClick = (request: PropertyRequest) => {
     setSelectedRequest(request);
     setStatusNotes('');
     setShowStatusModal(true);
   };
 
-  // Update Request Status
   async function updateRequestStatus(id: string, status: string, notes?: string) {
     try {
-      const updateData: { status: string; status_notes?: string; status_updated_at?: string } = { 
+      const updateData: { status: string; status_notes?: string; status_updated_at?: string } = {
         status,
         status_updated_at: new Date().toISOString()
       };
-      
-      if (notes) {
-        updateData.status_notes = notes;
-      }
-      
-      const { error } = await supabase
-        .from('property_requests')
-        .update(updateData)
-        .eq('id', id);
-        
+      if (notes) updateData.status_notes = notes;
+      const { error } = await supabase.from('property_requests').update(updateData).eq('id', id);
       if (error) throw error;
-      
-      // Update local state
-      setRequests(requests.map(req => 
-        req.id === id ? { ...req, status, status_notes: notes } : req
-      ));
-      
+      setRequests(requests.map(req => req.id === id ? { ...req, status, status_notes: notes } : req));
       setShowStatusModal(false);
       setSelectedRequest(null);
     } catch (error) {
@@ -117,41 +102,62 @@ const RequestsPage: React.FC = () => {
     }
   }
 
-  // Delete Request
   const handleDeleteClick = (request: PropertyRequest) => {
     setSelectedRequest(request);
     setShowDeleteModal(true);
   };
 
+
+
   const confirmDelete = async () => {
     if (!selectedRequest) return;
-    
     try {
-      const { error } = await supabase
-        .from('property_requests')
-        .delete()
-        .eq('id', selectedRequest.id);
-        
+      const { error } = await supabase.from('property_requests').delete().eq('id', selectedRequest.id);
       if (error) throw error;
-      
-      // Update local state
       setRequests(requests.filter(request => request.id !== selectedRequest.id));
       setShowDeleteModal(false);
       setSelectedRequest(null);
+      toast.success('Request deleted successfully');
     } catch (error) {
       console.error('Error deleting request:', error);
     }
   };
 
-  // Get status color class
   const getStatusColorClass = (status: string | null) => {
     const statusOption = statusOptions.find(option => option.value === status);
     return statusOption?.color || 'bg-gray-100 text-gray-800';
   };
 
+  const handleEditClick = (request: PropertyRequest) => {
+    setSelectedRequest(request);
+    setEditFormData(request);
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedRequest) return;
+    try {
+      const { error } = await supabase
+        .from('property_requests')
+        .update({ ...editFormData, updated_at: new Date().toISOString() })
+        .eq('id', selectedRequest.id);
+      if (error) throw error;
+      setRequests(requests.map(req => req.id === selectedRequest.id ? { ...req, ...editFormData } : req));
+      setShowEditModal(false);
+      setSelectedRequest(null);
+      toast.success('Request updated successfully');
+    } catch (err) {
+      console.error('Error updating request:', err);
+    }
+  };
+
   return (
+    <>
+    <Toaster />
     <AdminDashboard>
-      <div className="space-y-6">
+
+     <div className="space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between justify-between">
           <h2 className="text-2xl font-bold tracking-tight text-gray-900">Property Requests</h2>
           
@@ -283,7 +289,7 @@ const RequestsPage: React.FC = () => {
                         <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColorClass(request.status)}`}>
                           {request.status || 'Pending'}
                         </span>
-                        <MoreHorizontal className="h-4 w-4 text-gray-400" />
+                        {/* <MoreHorizontal className="h-4 w-4 text-gray-400" /> */}
                       </button>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -302,6 +308,13 @@ const RequestsPage: React.FC = () => {
                           title="View Details"
                         >
                           <Eye className="h-5 w-5" />
+                        </button>
+                        <button 
+                          className="text-green-600 hover:text-indigo-900"
+                          title="View Details"
+                          onClick={() => handleEditClick(request)}
+                        >
+                         <SquarePen className="h-5 w-5" />
                         </button>
                         <button 
                           className="text-red-600 hover:text-red-900"
@@ -327,83 +340,334 @@ const RequestsPage: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Status Update Modal */}
-      {showStatusModal && selectedRequest && (
+      {/* Add Edit Modal Here */}
+      {/* {showEditModal && selectedRequest && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-6 overflow-y-auto max-h-[90vh]">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Update Status</h3>
-              <button 
-                onClick={() => setShowStatusModal(false)}
-                className="text-gray-400 hover:text-gray-500"
-              >
+              <h3 className="text-lg font-semibold text-gray-900">Edit Property Request</h3>
+              <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
-            
-            <div className="mb-6">
-              <div className="flex items-center mb-4">
-                <User className="h-5 w-5 mr-2 text-indigo-500" />
-                <span className="font-medium">{selectedRequest.full_name}</span>
-              </div>
-              
-              <p className="text-sm text-gray-500 mb-4">
-                Current status: 
-                <span className={`ml-2 px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColorClass(selectedRequest.status)}`}>
-                  {selectedRequest.status || 'Pending'}
-                </span>
-              </p>
-              
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4">
-                  {statusOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => updateRequestStatus(selectedRequest.id, option.value, statusNotes)}
-                      className={`flex items-center px-4 py-3 border rounded-md transition-colors ${
-                        selectedRequest.status === option.value
-                          ? 'border-indigo-500 bg-indigo-50'
-                          : 'border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center ${option.color.replace('text-', 'text-white ').replace('bg-', 'bg-')}`}>
-                        {option.icon}
-                      </div>
-                      <span className="ml-3 font-medium">{option.label}</span>
-                    </button>
-                  ))}
-                </div>
-                
+
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="statusNotes" className="block text-sm font-medium text-gray-700 mb-1">
-                    Notes (optional)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                  <input
+                    type="text"
+                    value={editFormData.full_name || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Email</label>
+                  <input
+                    type="email"
+                    value={editFormData.email || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Phone</label>
+                  <input
+                    type="text"
+                    value={editFormData.phone || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Location</label>
+                  <input
+                    type="text"
+                    value={editFormData.location || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, location: e.target.value })}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Budget</label>
+                  <input
+                    type="text"
+                    value={editFormData.budget || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, budget: e.target.value })}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Property Type</label>
+                  <select
+                    value={editFormData.property_type || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, property_type: e.target.value })}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  >
+                    <option value="">Select</option>
+                    <option value="Land">Land</option>
+                    <option value="House">House</option>
+                    <option value="Room/Flat">Room/Flat</option>
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">Additional Requirements</label>
                   <textarea
-                    id="statusNotes"
+                    value={editFormData.additional_requirements || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, additional_requirements: e.target.value })}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2"
                     rows={3}
-                    placeholder="Add any notes about this status update..."
-                    value={statusNotes}
-                    onChange={(e) => setStatusNotes(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                   />
                 </div>
               </div>
-            </div>
-            
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setShowStatusModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-            </div>
+
+              <div className="flex justify-end gap-3 mt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-md"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
           </div>
         </div>
-      )}
+      )} */}
 
-      {/* Delete Confirmation Modal */}
+    {/* {showEditModal && selectedRequest && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-6 overflow-y-auto max-h-[90vh]">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Edit Property Request</h3>
+              <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  ['Full Name', 'full_name'],
+                  ['Email', 'email'],
+                  ['Phone', 'phone'],
+                  ['Location', 'location'],
+                  ['Budget', 'budget'],
+                  ['Property Type', 'property_type'],
+                  ['Area', 'area'],
+                  ['Area Unit', 'area_unit'],
+                  ['Road Width', 'road_width'],
+                  ['Road Width Unit', 'road_width_unit'],
+                  ['No. of Rooms', 'number_of_rooms'],
+                  ['No. of People', 'number_of_people'],
+                  ['Coordinates', 'coordinates'],
+                  ['Admin Notes', 'admin_notes'],
+                  ['Status', 'status'],
+                  ['Has Paid', 'hasPaid'],
+                  ['Email Count', 'emailCount'],
+                  ['Message Count', 'messageCount'],
+                ].map(([label, key]) => (
+                  <div key={key as string}>
+                    <label className="block text-sm font-medium text-gray-700">{label}</label>
+                    <input
+                      type="text"
+                      value={(editFormData[key as keyof PropertyRequest]?.toString() ?? '') as string}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, [key]: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    />
+                  </div>
+                ))}
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">Additional Requirements</label>
+                  <textarea
+                    value={editFormData.additional_requirements || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, additional_requirements: e.target.value })}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    rows={3}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 mt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-md"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )} */}
+
+     {showEditModal && selectedRequest && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div className="bg-white rounded-lg shadow-lg w-full max-w-6xl p-6 overflow-x-auto max-h-[90vh]">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">Edit Property Request</h3>
+        <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600">
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+      <form onSubmit={handleEditSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {[
+            ['Full Name', 'full_name'],
+            ['Email', 'email'],
+            ['Phone', 'phone'],
+            ['Location', 'location'],
+            ['Budget', 'budget'],
+            ['Area', 'area'],
+            ['Coordinates', 'coordinates'],
+            ['Admin Notes', 'admin_notes'],
+            ['Has Paid', 'hasPaid'],
+            ['Email Count', 'emailCount'],
+            ['Message Count', 'messageCount'],
+            ['No. of Rooms', 'number_of_rooms'],
+            ['No. of People', 'number_of_people'],
+          ].map(([label, key]) => (
+            <div key={key}>
+              <label className="block text-sm font-medium text-gray-700">{label}</label>
+              <input
+                type="text"
+                value={(editFormData[key as keyof PropertyRequest]?.toString() ?? '')}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, [key]: e.target.value }))}
+                className="w-full border border-gray-300 rounded-md px-3 py-2"
+              />
+            </div>
+          ))}
+
+          {/* Property Type Dropdown */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Property Type</label>
+            <select
+              value={editFormData.property_type || ''}
+              onChange={(e) => setEditFormData({ ...editFormData, property_type: e.target.value })}
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+            >
+              <option value="">Select</option>
+              <option value="Land">Land</option>
+              <option value="House">House</option>
+              <option value="Room/Flat">Room/Flat</option>
+            </select>
+          </div>
+
+          {/* Area Unit Dropdown */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Area Unit</label>
+            <select
+              value={editFormData.area_unit || ''}
+              onChange={(e) => setEditFormData({ ...editFormData, area_unit: e.target.value })}
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+            >
+              <option value="">Select</option>
+              <option value="Sq.ft">Sq.ft</option>
+              <option value="Ropani">Ropani</option>
+              <option value="Aana">Aana</option>
+              <option value="Paisa">Paisa</option>
+              <option value="Daam">Daam</option>
+            </select>
+          </div>
+
+          {/* Road Width Unit Dropdown */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Road Width Unit</label>
+            <select
+              value={editFormData.road_width_unit || ''}
+              onChange={(e) => setEditFormData({ ...editFormData, road_width_unit: e.target.value })}
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+            >
+              <option value="">Select</option>
+              <option value="ft">ft</option>
+              <option value="m">m</option>
+            </select>
+          </div>
+
+          {/* Road Width Input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Road Width</label>
+            <input
+              type="text"
+              value={editFormData.road_width || ''}
+              onChange={(e) => setEditFormData({ ...editFormData, road_width: e.target.value })}
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+            />
+          </div>
+
+          {/* Status Dropdown */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Status</label>
+            <select
+              value={editFormData.status || ''}
+              onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+            >
+              <option value="">Select</option>
+              <option value="pending">Pending</option>
+              <option value="processed">Processed</option>
+              <option value="contacted">Contacted</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+
+          {/* Additional Requirements */}
+          <div className="lg:col-span-3">
+            <label className="block text-sm font-medium text-gray-700">Additional Requirements</label>
+            <textarea
+              value={editFormData.additional_requirements || ''}
+              onChange={(e) => setEditFormData({ ...editFormData, additional_requirements: e.target.value })}
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+              rows={3}
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 mt-4">
+          <button
+            type="button"
+            onClick={() => setShowEditModal(false)}
+            className="px-4 py-2 text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-100"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-md"
+          >
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
+
+
+
+       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
@@ -446,6 +710,7 @@ const RequestsPage: React.FC = () => {
         </div>
       )}
     </AdminDashboard>
+    </>
   );
 };
 

@@ -12,41 +12,78 @@ const AdminLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = async (e:React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
+  // const handleSubmit = async (e:React.FormEvent) => {
+  //   e.preventDefault();
+  //   setError('');
+  //   setIsLoading(true);
 
-    try {
-      // Direct admin login without checking user session
-      const response = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+  //   try {
+  //     // Direct admin login without checking user session
+  //     const response = await fetch('/api/admin/login', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({ email, password }),
+  //     });
 
-      const data = await response.json();
+  //     const data = await response.json();
 
-      if (!response.ok) {
-        setError(data.error || 'Login failed');
-        setIsLoading(false);
-        return;
-      }
+  //     if (!response.ok) {
+  //       setError(data.error || 'Login failed');
+  //       setIsLoading(false);
+  //       return;
+  //     }
 
-      // Store admin token in localStorage
-      localStorage.setItem('adminToken', data.token);
+  //     // Store admin token in localStorage
+  //     localStorage.setItem('adminToken', data.token);
       
-      // Redirect to admin dashboard
-      router.push('/admin/');
-    } catch (error) {
-      console.error('Authentication error:', error);
-      setError('An error occurred during authentication');
-    } finally {
+  //     // Redirect to admin dashboard
+  //     router.push('/admin/');
+  //   } catch (error) {
+  //     console.error('Authentication error:', error);
+  //     setError('An error occurred during authentication');
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError('');
+  setIsLoading(true);
+
+  try {
+    // 1. Authenticate user using Supabase Auth
+    const authRes = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await authRes.json();
+
+    if (!authRes.ok) {
+      setError(data.error || 'Login failed');
       setIsLoading(false);
+      return;
     }
-  };
+
+    // 2. Store token from server
+    localStorage.setItem('adminToken', data.token);
+
+    // 3. Redirect only if user is admin (this is already checked by server)
+    router.push('/admin/');
+  } catch (error) {
+    console.error('Authentication error:', error);
+    setError('An error occurred during authentication');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-50 relative">

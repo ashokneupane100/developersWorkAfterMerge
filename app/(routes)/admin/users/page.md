@@ -1,4 +1,3 @@
-// Updated UsersPage.tsx with phone and is_number_verified fields in table, edit modal, and filters
 "use client";
 import React, { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
@@ -35,7 +34,6 @@ interface UserProfile {
   user_role: "Admin" | "Agent" | "Buyer";
   auth_provider: string;
   phone?: string | null;
-  is_number_verified?: boolean;
 }
 
 const UsersPage: React.FC = () => {
@@ -46,8 +44,6 @@ const UsersPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
-  const [filterEmailVerified, setFilterEmailVerified] = useState<string>("all");
-  const [filterPhoneVerified, setFilterPhoneVerified] = useState<string>("all");
 
   useEffect(() => {
     fetchUsers();
@@ -106,8 +102,6 @@ const UsersPage: React.FC = () => {
           address: editingUser.address,
           user_role: editingUser.user_role,
           auth_provider: editingUser.auth_provider,
-          phone: editingUser.phone,
-          is_number_verified: editingUser.is_number_verified,
           updated_at: new Date().toISOString(),
         })
         .eq("id", editingUser.id);
@@ -120,20 +114,11 @@ const UsersPage: React.FC = () => {
     }
   };
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
+  const filteredUsers = users.filter(
+    (user) =>
       user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesEmail =
-      filterEmailVerified === "all" ||
-      (filterEmailVerified === "verified" && user.email_verified) ||
-      (filterEmailVerified === "unverified" && !user.email_verified);
-    const matchesPhone =
-      filterPhoneVerified === "all" ||
-      (filterPhoneVerified === "verified" && user.is_number_verified) ||
-      (filterPhoneVerified === "unverified" && !user.is_number_verified);
-    return matchesSearch && matchesEmail && matchesPhone;
-  });
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <AdminDashboard>
@@ -142,31 +127,19 @@ const UsersPage: React.FC = () => {
           <h2 className="text-2xl font-bold tracking-tight text-gray-900">Users</h2>
 
           <div className="mt-4 md:mt-0 flex items-center space-x-3">
-            <input
-              type="text"
-              placeholder="Search users..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-3 py-2 border border-gray-300 rounded-md"
-            />
-            <select
-              value={filterEmailVerified}
-              onChange={(e) => setFilterEmailVerified(e.target.value)}
-              className="py-2 px-2 border rounded"
-            >
-              <option value="all">All Emails</option>
-              <option value="verified">Email Verified</option>
-              <option value="unverified">Email Unverified</option>
-            </select>
-            <select
-              value={filterPhoneVerified}
-              onChange={(e) => setFilterPhoneVerified(e.target.value)}
-              className="py-2 px-2 border rounded"
-            >
-              <option value="all">All Phones</option>
-              <option value="verified">Phone Verified</option>
-              <option value="unverified">Phone Unverified</option>
-            </select>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search users..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              />
+            </div>
+
             <button
               onClick={fetchUsers}
               className="p-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
@@ -177,7 +150,6 @@ const UsersPage: React.FC = () => {
           </div>
         </div>
 
-        {/* TABLE */}
         {loading ? (
           <div className="flex justify-center p-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
@@ -272,18 +244,26 @@ const UsersPage: React.FC = () => {
           </div>
         )}
 
-
         {/* Edit Modal */}
         {showEditModal && editingUser && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-[95%] max-w-6xl">
               <h2 className="text-xl font-bold mb-4">Edit User</h2>
               <div className="grid grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto">
-                {["full_name", "email", "avatar_url", "phone", "latitude", "longitude", "full_address", "address", "auth_provider"].map((key) => (
+                {[
+                  { key: "full_name", label: "Full Name" },
+                  { key: "email", label: "Email" },
+                  { key: "avatar_url", label: "Avatar URL" },
+                  { key: "latitude", label: "Latitude" },
+                  { key: "longitude", label: "Longitude" },
+                  { key: "full_address", label: "Full Address" },
+                  { key: "address", label: "Address" },
+                  { key: "auth_provider", label: "Auth Provider" }
+                ].map(({ key, label }) => (
                   <input
                     key={key}
                     type="text"
-                    placeholder={key}
+                    placeholder={label}
                     value={(editingUser as any)[key] || ""}
                     onChange={(e) => setEditingUser({ ...editingUser, [key]: e.target.value })}
                     className="w-full border p-2 rounded"
@@ -296,23 +276,6 @@ const UsersPage: React.FC = () => {
                     type="checkbox"
                     checked={editingUser.email_verified}
                     onChange={(e) => setEditingUser({ ...editingUser, email_verified: e.target.checked })}
-                  />
-                </div>
-                  <div className="flex items-center space-x-2">
-                  <label>Phone Number</label>
-                  <input
-                    type="text"
-                    value={editingUser.phone || ""}
-                    onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })}
-                    className="w-full border p-2 rounded"
-                  />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <label>Phone Verified</label>
-                  <input
-                    type="checkbox"
-                    checked={editingUser.is_number_verified || false}
-                    onChange={(e) => setEditingUser({ ...editingUser, is_number_verified: e.target.checked })}
                   />
                 </div>
                 <div className="flex items-center space-x-2">
