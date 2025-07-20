@@ -5,8 +5,10 @@ import {
   MagnifyingGlassIcon,
   AdjustmentsHorizontalIcon,
   XMarkIcon,
+  ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 import OpenStreetMapSearch from "./OpenStreetMapSearch";
+import FilterSection from "./FilterSection";
 
 const PropertySearch = ({
   currentAction,
@@ -17,10 +19,35 @@ const PropertySearch = ({
   isLoading,
   setCoordinates,
   onAddressChange,
+  // Advanced filter props
+  setBathRoomsCount,
+  setRoomsCount,
+  setParkingCount,
+  setPriceRange,
+  setArea,
+  roomsCount = 0,
+  bathRoomsCount = 0,
+  parkingCount = 0,
+  priceRange = null,
+  area = null,
 }) => {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [isFilterApplied, setIsFilterApplied] = useState(false);
 
   const propertyTypes = ["All", "Room/Flat", "House", "Land", "Shop"];
+
+  // Count active filters
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (roomsCount > 0) count++;
+    if (bathRoomsCount > 0) count++;
+    if (parkingCount > 0) count++;
+    if (priceRange && (priceRange[0] > 0 || priceRange[1] < Infinity)) count++;
+    if (area && (area[0] > 0 || area[1] < Infinity)) count++;
+    return count;
+  };
+
+  const activeFiltersCount = getActiveFiltersCount();
 
   return (
     <div
@@ -95,6 +122,82 @@ const PropertySearch = ({
               </div>
             </div>
           </div>
+
+          {/* Advanced Filters Toggle */}
+          <div className="flex justify-between items-center mb-4">
+            <button
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              className="flex items-center gap-2 text-white hover:text-blue-200 transition-colors"
+            >
+              <AdjustmentsHorizontalIcon className="h-5 w-5" />
+              <span>
+                {showAdvancedFilters
+                  ? "Hide Advanced Filters"
+                  : "Show Advanced Filters"}
+                {activeFiltersCount > 0 && (
+                  <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </span>
+              {showAdvancedFilters ? (
+                <XMarkIcon className="h-4 w-4" />
+              ) : (
+                <ChevronDownIcon className="h-4 w-4" />
+              )}
+            </button>
+          </div>
+
+          {/* Advanced Filters */}
+          {showAdvancedFilters && (
+            <div className="bg-white/20 rounded-lg p-4 mb-4">
+              <FilterSection
+                setBathRoomsCount={setBathRoomsCount}
+                setRoomsCount={setRoomsCount}
+                setParkingCount={setParkingCount}
+                setPriceRange={setPriceRange}
+                setArea={setArea}
+                currentAction={currentAction}
+                propertyType={propertyType}
+                onFilterChange={() => setIsFilterApplied(true)}
+              />
+            </div>
+          )}
+
+          {/* Active Filters Display */}
+          {activeFiltersCount > 0 && (
+            <div className="mb-4 flex flex-wrap gap-2">
+              {roomsCount > 0 && (
+                <span className="bg-blue-50 text-blue-800 px-2 py-1 rounded-md text-xs">
+                  {roomsCount}+ rooms
+                </span>
+              )}
+              {bathRoomsCount > 0 && (
+                <span className="bg-cyan-50 text-cyan-800 px-2 py-1 rounded-md text-xs">
+                  {bathRoomsCount}+ baths
+                </span>
+              )}
+              {parkingCount > 0 && (
+                <span className="bg-orange-50 text-orange-800 px-2 py-1 rounded-md text-xs">
+                  {parkingCount}+ parking
+                </span>
+              )}
+              {priceRange &&
+                (priceRange[0] > 0 || priceRange[1] < Infinity) && (
+                  <span className="bg-emerald-50 text-emerald-800 px-2 py-1 rounded-md text-xs">
+                    Rs {priceRange[0]?.toLocaleString()} - Rs{" "}
+                    {priceRange[1] === Infinity
+                      ? "∞"
+                      : priceRange[1]?.toLocaleString()}
+                  </span>
+                )}
+              {area && (area[0] > 0 || area[1] < Infinity) && (
+                <span className="bg-purple-50 text-purple-800 px-2 py-1 rounded-md text-xs">
+                  {area[0]} - {area[1] === Infinity ? "∞" : area[1]} sq ft
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Search Button */}
           <button
