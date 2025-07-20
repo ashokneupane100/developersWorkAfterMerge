@@ -11,7 +11,7 @@ import {
   ChevronRightIcon,
 } from "@heroicons/react/24/outline";
 import JobIntern from "../../public/assets/images/onFooter.png";
-import logo from "../../public/assets/images/homeLogoRemovedBg.png";
+import logo from "../../public/logo.png";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -281,8 +281,8 @@ const Footer = () => {
                   <Image
                     src={logo}
                     alt="OnlineHome Nepal"
-                    width={128}
-                    height={128}
+                    width={100}
+                    height={100}
                     className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-110"
                     priority
                   />
@@ -339,7 +339,7 @@ const Footer = () => {
                         </div>
                         {/* Tagline */}
                         <div
-                          className="flex justify-center items-center px-4 sm:px-10 mt-2"
+                          className="flex justify-center items-center px-4  sm:px-10 mt-2"
                           style={{
                             animation: "fadeScaleBounce 0.8s ease-out forwards",
                           }}
