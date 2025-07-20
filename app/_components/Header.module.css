@@ -10,11 +10,11 @@
 .animateGradient {
   background: linear-gradient(90deg, #046d04,#152701);
   background-size: 200% 100%;
-  animation: gradient-animation .01s linear infinite;
+  animation: gradient-animation .003s ease-in-out infinite;
 }
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 @keyframes spin {

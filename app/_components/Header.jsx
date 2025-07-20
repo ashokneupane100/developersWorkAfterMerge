@@ -15,6 +15,7 @@ import { FiPhoneCall } from 'react-icons/fi';
 import { Button } from "@heroui/react";
 import { useAuth } from "@/contexts/AuthContext"
 import logo from "../../public/assets/images/homeLogo.png";
+
 // Custom Dropdown Components
 const CustomDropdown = ({ trigger, children }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -120,16 +121,28 @@ const Header = memo(function Header() {
 
   return (
     <>
-      {/* Style JSX remains the same */}
+      {/* Style JSX with smooth left-to-right animation */}
       <style jsx global>{`
         @keyframes gradient-animation {
-          0% { background-position: 200% 50%; }
-          100% { background-position: 0% 50%; }
+          0% {
+            background-position: 200% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
         }
         .animateGradient {
-          background: linear-gradient(90deg, rgb(8, 98, 8), #152701, #152701);
+          background: linear-gradient(90deg, #046d04,#152701);
           background-size: 200% 100%;
-          animation: gradient-animation 0.8s linear infinite;
+          animation: gradient-animation 2s ease-in-out infinite;
+        }
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
       `}</style>
       <div className="bg-white fixed top-0 w-full z-[1000] border-b shadow-sm">
@@ -260,13 +273,13 @@ const Header = memo(function Header() {
               <div className="flex items-center">
                 <Image
                   src={logo}
-                  width={500}
-                  height={500}
+                  width={50}
+                  height={50}
                   alt="logo"
                   priority
                   className="object-contain w-50 h-50"
                 />
-                <h1 className="ml-2 font-bold text-green-800 text-lg leading-tight">
+                <h1 className="ml-2 font-bold text-green-800 text-lg leading-tight text-center pt-1">
                   onlinehome
                   <span className="block text-xs text-green-700">
                   बर्षौं बर्षको बलियो सम्बन्ध
@@ -347,35 +360,35 @@ const Header = memo(function Header() {
 
           {/* Action Buttons Row - Updated for Mobile */}
           <div className="grid grid-cols-3 gap-2 p-2">
-            {/* All Properties Button for Mobile */}
-            <Link href="/all-properties" prefetch={false} className="w-full">
+            {/* Request Property Button for Mobile */}
+            <Link href="/request-property" prefetch={false} className="w-full">
               <Button 
-                className="bg-green-600 hover:bg-green-700 text-white w-full flex items-center justify-center gap-1"
+                className="bg-blue-700 border border-green-600 hover:bg-green-700 text-white hover:text-white w-full flex items-center justify-center gap-1 py-1 px-2"
                 size="sm"
               >
-                <BuildingOfficeIcon className="w-4 h-4" />
-                <span className="text-xs">All Properties</span>
+                <PlusIcon className="w-4 h-4" />
+                <span className="text-sm font-medium">Request Property</span>
               </Button>
             </Link>
             
             <Link href="/add-new-listing" prefetch={false} className="w-full">
               <Button 
-                className="bg-green-600 hover:bg-green-700 text-white w-full flex items-center justify-center gap-1"
+                className="bg-green-600 hover:bg-green-700 text-white w-full flex items-center justify-center gap-1 py-1 px-2"
                 size="sm"
               >
                 <PlusIcon className="w-4 h-4" />
-                <span className="text-xs">Post Property</span>
+                <span className="text-sm font-medium">Post Property</span>
               </Button>
             </Link>
             
             <Button 
               variant="outline" 
-              className={buttonClass}
+              className={`${buttonClass} py-1 px-2`}
               size="sm"
               onClick={() => window.location.href='tel:+9779851331644'}
             >
-              <PhoneIcon className="w-4 h-4" />
-              <span className="text-xs">9851331644</span>
+              <PhoneIcon className="w-4 h-4"  />
+              <span className="text-sm font-medium">9851331644</span>
             </Button>
           </div>
         </div>
