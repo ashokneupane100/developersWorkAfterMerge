@@ -91,32 +91,20 @@ const ComprehensiveFilterPanel = ({
         </div>
       </div>
 
-      {/* Advanced FilterSection Component */}
-      <div className="mb-8">
-        <FilterSection
-          setBathRoomsCount={setBathRoomsCount}
-          setRoomsCount={setRoomsCount}
-          setParkingCount={setParkingCount}
-          setPriceRange={setPriceRange}
-          setArea={setArea}
-          currentAction={currentAction}
-          propertyType={tempFilters.propertyType}
-          onFilterChange={handleListingFilterChange}
-        />
-      </div>
+
 
       {/* Property-Specific Comprehensive Filters */}
       {/* Room/Flat Specific Filters */}
       {tempFilters.propertyType === 'Room/Flat' && (
         <div className="mb-8 bg-gradient-to-r from-pink-50 to-rose-50 rounded-xl p-6 border border-pink-200">
           <h4 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2">
-            🏠 Room/Flat Specific Filters
+            🏠 कोठा/फ्ल्याटसम्बन्धी विवरण (Room/Flat Specific Fields)
           </h4>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Room Type */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">कोठाको प्रकार (Room Type)</label>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">कोठाको प्रकार (Room Type)</label>
               <select
                 value={tempFilters.roomType}
                 onChange={(e) => setTempFilters(prev => ({ ...prev, roomType: e.target.value }))}
@@ -130,41 +118,101 @@ const ComprehensiveFilterPanel = ({
               </select>
             </div>
 
-            {/* Car Parking */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">कार पार्किङ संख्या (Car Parking)</label>
-              <input
-                type="number"
-                min={0}
-                placeholder="e.g. 1"
-                value={tempFilters.carParking}
-                onChange={(e) => setTempFilters(prev => ({ ...prev, carParking: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-              />
+            {/* Budget Range for Room/Flat */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">💰 Budget Range</label>
+              <select
+                value={tempFilters.priceRange || ''}
+                onChange={(e) => {
+                  setTempFilters(prev => ({ ...prev, priceRange: e.target.value }));
+                  // Parse and set price range for filtering
+                  if (e.target.value) {
+                    const ranges = {
+                      "0-10000": [0, 10000],
+                      "10000-15000": [10000, 15000], 
+                      "15000-20000": [15000, 20000],
+                      "20000-25000": [20000, 25000],
+                      "25000-100000000": [25000, Infinity]
+                    };
+                    setPriceRange(ranges[e.target.value] || null);
+                  } else {
+                    setPriceRange(null);
+                  }
+                  handleListingFilterChange();
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+              >
+                <option value="">Select Budget</option>
+                <option value="0-10000">Rs 1 – Rs 10K</option>
+                <option value="10000-15000">Rs 10K – Rs 15K</option>
+                <option value="15000-20000">Rs 15K – Rs 20K</option>
+                <option value="20000-25000">Rs 20K – Rs 25K</option>
+                <option value="25000-100000000">Above Rs 25K</option>
+              </select>
             </div>
 
-            {/* Bike Parking */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">बाइक पार्किङ संख्या (Bike Parking)</label>
-              <input
-                type="number"
-                min={0}
-                placeholder="e.g. 2"
-                value={tempFilters.bikeParking}
-                onChange={(e) => setTempFilters(prev => ({ ...prev, bikeParking: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-              />
+            {/* Parking Toggle */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">पार्किङ उपलब्ध छ? (Parking Available?)</label>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => setTempFilters(prev => ({ ...prev, hasParking: !prev.hasParking }))}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    tempFilters.hasParking ? 'bg-blue-600' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      tempFilters.hasParking ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className="text-sm text-gray-600">
+                  {tempFilters.hasParking ? 'छ (Yes)' : 'छैन (No)'}
+                </span>
+              </div>
             </div>
+
+            {/* Conditionally Show Parking Fields */}
+            {tempFilters.hasParking && (
+              <>
+                {/* Car Parking */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">कार पार्किङ संख्या (Car Parking)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="e.g. 1"
+                    value={tempFilters.carParking || ''}
+                    onChange={(e) => setTempFilters(prev => ({ ...prev, carParking: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                </div>
+
+                {/* Bike Parking */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">बाइक पार्किङ संख्या (Bike Parking)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="e.g. 2"
+                    value={tempFilters.bikeParking || ''}
+                    onChange={(e) => setTempFilters(prev => ({ ...prev, bikeParking: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                </div>
+              </>
+            )}
 
             {/* Pet Allowed */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">पाल्तु जनावर (Pets Allowed)</label>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">पाल्तु जनावर (Dog/Cat Allowed?)</label>
               <select
                 value={tempFilters.petsAllowed}
                 onChange={(e) => setTempFilters(prev => ({ ...prev, petsAllowed: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white"
               >
-                <option value="">पाल्तु जनावर अनुमति?</option>
+                <option value="">पाल्तु जनावर अनुमति? (Allowed?)</option>
                 <option value="Yes">हो (Yes)</option>
                 <option value="No">होइन (No)</option>
               </select>
@@ -233,78 +281,104 @@ const ComprehensiveFilterPanel = ({
       {/* House Specific Filters */}
       {tempFilters.propertyType === 'House' && (
         <div className="mb-8 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200">
-          <h4 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2">
-            🏡 House Specific Filters
+          <h4 className="text-xl font-semibold text-gray-800 mb-6 text-center">
+            🏠 घरसम्बन्धी विवरण (House Specific Fields)
           </h4>
 
-          {/* Bedrooms & Bathrooms - Enhanced UI */}
-          <div className="w-full flex flex-col sm:flex-row justify-center gap-6 mb-8">
-            {/* Bedrooms */}
-            <div className="flex flex-col items-center bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-md w-full max-w-xs hover:shadow-lg transition">
-              <label className="text-md font-semibold text-blue-800 mb-2">शयनकक्ष (Bedrooms)</label>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setTempFilters((prev) => ({ ...prev, rooms: Math.max(0, prev.rooms - 1) }))}
-                  className="w-10 h-10 rounded-full bg-white text-blue-600 font-bold border border-blue-400 hover:bg-blue-100 transition"
-                >
-                  −
-                </button>
-                <span className="text-xl font-bold text-blue-800">{tempFilters.rooms}</span>
-                <button
-                  onClick={() => setTempFilters((prev) => ({ ...prev, rooms: prev.rooms + 1 }))}
-                  className="w-10 h-10 rounded-full bg-white text-blue-600 font-bold border border-blue-400 hover:bg-blue-100 transition"
-                >
-                  +
-                </button>
-              </div>
-            </div>
 
-            {/* Bathrooms */}
-            <div className="flex flex-col items-center bg-pink-50 border border-pink-200 rounded-xl p-4 shadow-md w-full max-w-xs hover:shadow-lg transition">
-              <label className="text-md font-semibold text-pink-800 mb-2">नुहाउने कोठा (Bathrooms)</label>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setTempFilters((prev) => ({ ...prev, bathrooms: Math.max(0, prev.bathrooms - 1) }))}
-                  className="w-10 h-10 rounded-full bg-white text-pink-600 font-bold border border-pink-400 hover:bg-pink-100 transition"
-                >
-                  −
-                </button>
-                <span className="text-xl font-bold text-pink-800">{tempFilters.bathrooms}</span>
-                <button
-                  onClick={() => setTempFilters((prev) => ({ ...prev, bathrooms: prev.bathrooms + 1 }))}
-                  className="w-10 h-10 rounded-full bg-white text-pink-600 font-bold border border-pink-400 hover:bg-pink-100 transition"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </div>
 
-          {/* Price Range for House */}
+          {/* Budget Range for House */}
           <div className="mb-6">
-            <label className="text-sm font-medium text-gray-700 mb-2 block">Price Range</label>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">💰 Budget Range</label>
             <select
-              value={tempFilters.priceRange}
-              onChange={(e) => setTempFilters((prev) => ({ ...prev, priceRange: e.target.value }))}
+              value={tempFilters.priceRange || ''}
+              onChange={(e) => {
+                setTempFilters((prev) => ({ ...prev, priceRange: e.target.value }));
+                // Parse and set price range for house properties
+                if (e.target.value) {
+                  const ranges = {
+                    "0-10000000": [0, 10000000],
+                    "10000000-20000000": [10000000, 20000000],
+                    "20000000-50000000": [20000000, 50000000], 
+                    "50000000-1000000000": [50000000, Infinity]
+                  };
+                  setPriceRange(ranges[e.target.value] || null);
+                } else {
+                  setPriceRange(null);
+                }
+                handleListingFilterChange();
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md"
             >
-              <option value="">Select Price Range</option>
-              {houseBudgetOptions.map((range) => (
-                <option key={range} value={range}>{range}</option>
-              ))}
+              <option value="">Select Budget</option>
+              <option value="0-10000000">Up to 1 Crore</option>
+              <option value="10000000-20000000">1 – 2 Crores</option>
+              <option value="20000000-50000000">2 – 5 Crores</option>
+              <option value="50000000-1000000000">Above 5 Crores</option>
             </select>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Rooms and Bathrooms */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            {/* Rooms */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">🛏️ Bedrooms</label>
+              <select
+                value={tempFilters.rooms || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setTempFilters(prev => ({ ...prev, rooms: parseInt(value) || 0 }));
+                  setRoomsCount(parseInt(value) || 0);
+                  handleListingFilterChange();
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+              >
+                <option value="">Any Rooms</option>
+                <option value="1">1+ Rooms</option>
+                <option value="2">2+ Rooms</option>
+                <option value="3">3+ Rooms</option>
+                <option value="4">4+ Rooms</option>
+              </select>
+            </div>
+
+            {/* Bathrooms */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">🛁 Bathrooms</label>
+              <select
+                value={tempFilters.bathrooms || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setTempFilters(prev => ({ ...prev, bathrooms: parseInt(value) || 0 }));
+                  setBathRoomsCount(parseInt(value) || 0);
+                  handleListingFilterChange();
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+              >
+                <option value="">Any Bathrooms</option>
+                <option value="1">1+ Bathrooms</option>
+                <option value="2">2+ Bathrooms</option>
+                <option value="3">3+ Bathrooms</option>
+                <option value="4">4+ Bathrooms</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {/* Parking Toggle */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Parking Available</label>
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Parking Available (पार्किङ छ?)</label>
               <div className="flex items-center space-x-3">
                 <button
                   onClick={() => setTempFilters((prev) => ({ ...prev, houseHasParking: !prev.houseHasParking }))}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${tempFilters.houseHasParking ? 'bg-blue-600' : 'bg-gray-300'}`}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    tempFilters.houseHasParking ? 'bg-blue-600' : 'bg-gray-300'
+                  }`}
                 >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${tempFilters.houseHasParking ? 'translate-x-6' : 'translate-x-1'}`} />
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      tempFilters.houseHasParking ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
                 </button>
                 <span className="text-sm text-gray-600">
                   {tempFilters.houseHasParking ? 'Yes (छ)' : 'No (छैन)'}
@@ -312,28 +386,30 @@ const ComprehensiveFilterPanel = ({
               </div>
             </div>
 
-            {/* Show parking fields if enabled */}
+            {/* Show if parking is enabled */}
             {tempFilters.houseHasParking && (
               <>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Car Parking</label>
+                {/* Car Parking */}
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Car Parking (कार पार्किङ संख्या)</label>
                   <input
                     type="number"
                     min={0}
                     placeholder="e.g. 1"
-                    value={tempFilters.houseCarParking}
+                    value={tempFilters.houseCarParking || ''}
                     onChange={(e) => setTempFilters((prev) => ({ ...prev, houseCarParking: e.target.value }))}
                     className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                   />
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Bike Parking</label>
+                {/* Bike Parking */}
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Bike Parking (बाइक पार्किङ संख्या)</label>
                   <input
                     type="number"
                     min={0}
                     placeholder="e.g. 2"
-                    value={tempFilters.houseBikeParking}
+                    value={tempFilters.houseBikeParking || ''}
                     onChange={(e) => setTempFilters((prev) => ({ ...prev, houseBikeParking: e.target.value }))}
                     className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                   />
@@ -341,11 +417,11 @@ const ComprehensiveFilterPanel = ({
               </>
             )}
 
-            {/* House Area */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">क्षेत्रफल (Area)</label>
+            {/* Area */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">क्षेत्रफल (Area Unit)</label>
               <select
-                value={tempFilters.houseArea}
+                value={tempFilters.houseArea || ''}
                 onChange={(e) => setTempFilters((prev) => ({ ...prev, houseArea: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm bg-white"
               >
@@ -364,25 +440,24 @@ const ComprehensiveFilterPanel = ({
               </select>
             </div>
 
-            {/* Custom Area Input */}
+            {/* Custom Area Input - Only show when Custom is selected */}
             {tempFilters.houseArea === "Custom" && (
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Custom Area</label>
+              <div className="space-y-1 mt-7">
                 <input
                   type="text"
                   placeholder="e.g., 3.5 Ropani"
-                  value={tempFilters.customHouseArea}
+                  value={tempFilters.customHouseArea || ''}
                   onChange={(e) => setTempFilters((prev) => ({ ...prev, customHouseArea: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm bg-white"
                 />
               </div>
             )}
 
-            {/* House Facing */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">House Facing (घरको दिशा)</label>
+            {/* Facing */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">House Facing (घरको दिशा)</label>
               <select
-                value={tempFilters.houseFacing}
+                value={tempFilters.houseFacing || ''}
                 onChange={(e) => setTempFilters(prev => ({ ...prev, houseFacing: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm bg-white"
               >
@@ -398,11 +473,11 @@ const ComprehensiveFilterPanel = ({
               </select>
             </div>
 
-            {/* Road Width */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">सडकको चौडाइ (Road Width)</label>
+            {/* Road Type */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">सडकको चौडाइ (Road Width)</label>
               <select
-                value={tempFilters.roadWidth}
+                value={tempFilters.roadWidth || ''}
                 onChange={(e) => setTempFilters(prev => ({ ...prev, roadWidth: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm bg-white"
               >
@@ -421,48 +496,86 @@ const ComprehensiveFilterPanel = ({
       {/* Land Specific Filters */}
       {tempFilters.propertyType === 'Land' && (
         <div className="mb-8 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl p-6 border border-yellow-200">
-          <h4 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2">
-            🌍 Land Specific Filters
+          <h4 className="text-md font-medium text-gray-800 mb-3">
+            Land Specific Fields
           </h4>
 
+          {/* Budget Range for Land */}
+          <div className="mb-6">
+            <label className="text-sm font-medium text-gray-700 mb-2 block">💰 Budget Range</label>
+            <select
+              value={tempFilters.priceRange || ''}
+              onChange={(e) => {
+                setTempFilters((prev) => ({ ...prev, priceRange: e.target.value }));
+                // Parse and set price range for land properties
+                if (e.target.value) {
+                  const ranges = {
+                    "0-5000000": [0, 5000000],
+                    "5000000-10000000": [5000000, 10000000],
+                    "10000000-20000000": [10000000, 20000000],
+                    "20000000-1000000000": [20000000, Infinity]
+                  };
+                  setPriceRange(ranges[e.target.value] || null);
+                } else {
+                  setPriceRange(null);
+                }
+                handleListingFilterChange();
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            >
+              <option value="">Select Budget</option>
+              <option value="0-5000000">Below 50 Lakhs</option>
+              <option value="5000000-10000000">50 Lakhs – 1 Crore</option>
+              <option value="10000000-20000000">1 – 2 Crores</option>
+              <option value="20000000-1000000000">Above 2 Crores</option>
+            </select>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Land Area */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">क्षेत्रफल (Land Area)</label>
+            {/* Area */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">क्षेत्रफल (Select Estimated Land Area)</label>
               <select
-                value={tempFilters.landArea}
+                value={tempFilters.landArea || ''}
                 onChange={(e) => setTempFilters(prev => ({ ...prev, landArea: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
               >
-                <option value="">क्षेत्रफल चयन गर्नुहोस्</option>
+                <option value="">क्षेत्रफल चयन गर्नुहोस् (Choose Area Range)</option>
+
+                {/* Gharderi (Urban) */}
                 <option value="under-4-aana">⬇ ४ आना भन्दा कम (Less than 4 Aana)</option>
                 <option value="above-4-aana">⬆ ४ आना भन्दा बढी (More than 4 Aana)</option>
                 <option value="above-1-ropani">⬆ १ रोपनी भन्दा बढी (More than 1 Ropani)</option>
+
+                {/* Terai (Madhesh) */}
                 <option value="under-1-kattha">⬇ १ कठ्ठा भन्दा कम (Less than 1 Kattha)</option>
                 <option value="above-1-kattha">⬆ १ कठ्ठा भन्दा बढी (More than 1 Kattha)</option>
                 <option value="above-4-kattha">⬆ ४ कठ्ठा भन्दा बढी (More than 4 Kattha)</option>
                 <option value="above-1-bigha">⬆ १ बिगाहा भन्दा बढी (More than 1 Bigha)</option>
+
+                {/* Fallback */}
                 <option value="custom">अन्य (Custom)</option>
               </select>
 
+              {/* Custom Land Area Input - Only show when custom is selected */}
               {tempFilters.landArea === 'custom' && (
                 <input
                   type="text"
                   placeholder="e.g., 3.5 Ropani, 2 Kattha"
-                  value={tempFilters.customLandArea}
+                  value={tempFilters.customLandArea || ''}
                   onChange={(e) => setTempFilters(prev => ({ ...prev, customLandArea: e.target.value }))}
-                  className="mt-3 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
                 />
               )}
             </div>
 
-            {/* Land Road Type */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">बाटोको प्रकार (Road Type)</label>
+            {/* Road Type (बाटोको प्रकार) */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">बाटोको प्रकार (Road Type)</label>
               <select
-                value={tempFilters.landRoadType}
+                value={tempFilters.landRoadType || ''}
                 onChange={(e) => setTempFilters(prev => ({ ...prev, landRoadType: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
               >
                 <option value="">कुनै पनि बाटो (Any Road Type)</option>
                 <option value="Pitched Road">पक्की बाटो (Pitched Road)</option>
@@ -479,32 +592,67 @@ const ComprehensiveFilterPanel = ({
       {/* Shop Specific Filters */}
       {tempFilters.propertyType === 'Shop' && (
         <div className="mb-8 bg-gradient-to-r from-purple-50 to-violet-50 rounded-xl p-6 border border-purple-200">
-          <h4 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2">
-            🏪 Shop Specific Filters
+          <h4 className="text-md font-medium text-gray-800 mb-3">
+            पसल विवरण (Shop Specific Fields)
           </h4>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Budget Range for Shop */}
+          <div className="mb-6">
+            <label className="text-sm font-medium text-gray-700 mb-2 block">💰 Budget Range</label>
+            <select
+              value={tempFilters.priceRange || ''}
+              onChange={(e) => {
+                setTempFilters((prev) => ({ ...prev, priceRange: e.target.value }));
+                // Parse and set price range for shop properties
+                if (e.target.value) {
+                  const ranges = {
+                    "10000-25000": [10000, 25000],
+                    "25000-50000": [25000, 50000],
+                    "50000-100000000": [50000, Infinity]
+                  };
+                  setPriceRange(ranges[e.target.value] || null);
+                } else {
+                  setPriceRange(null);
+                }
+                handleListingFilterChange();
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            >
+              <option value="">Select Budget</option>
+              <option value="10000-25000">Rs 10K – Rs 25K</option>
+              <option value="25000-50000">Rs 25K – Rs 50K</option>
+              <option value="50000-100000000">Above Rs 50K</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {/* Shop Area */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Area (क्षेत्रफल - sq ft)</label>
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Area (क्षेत्रफल - sq ft)</label>
               <input
                 type="text"
                 placeholder="e.g., 800"
-                value={tempFilters.shopArea}
+                value={tempFilters.shopArea || ''}
                 onChange={(e) => setTempFilters(prev => ({ ...prev, shopArea: e.target.value }))}
                 className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
               />
             </div>
 
-            {/* Shop Parking Toggle */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Parking Available</label>
+            {/* Parking Toggle */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Parking Available (पार्किङ उपलब्ध?)</label>
               <div className="flex items-center space-x-3">
                 <button
                   onClick={() => setTempFilters(prev => ({ ...prev, shopHasParking: !prev.shopHasParking }))}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${tempFilters.shopHasParking ? 'bg-blue-600' : 'bg-gray-300'}`}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    tempFilters.shopHasParking ? 'bg-blue-600' : 'bg-gray-300'
+                  }`}
                 >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${tempFilters.shopHasParking ? 'translate-x-6' : 'translate-x-1'}`} />
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      tempFilters.shopHasParking ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
                 </button>
                 <span className="text-sm text-gray-600">
                   {tempFilters.shopHasParking ? 'Yes (छ)' : 'No (छैन)'}
@@ -512,28 +660,30 @@ const ComprehensiveFilterPanel = ({
               </div>
             </div>
 
-            {/* Show parking fields if enabled */}
+            {/* Conditionally Show Parking Fields */}
             {tempFilters.shopHasParking && (
               <>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Car Parking</label>
+                {/* Car Parking */}
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Car Parking (कार पार्किङ)</label>
                   <input
                     type="number"
                     min={0}
                     placeholder="e.g., 1"
-                    value={tempFilters.shopCarParking}
+                    value={tempFilters.shopCarParking || ''}
                     onChange={(e) => setTempFilters(prev => ({ ...prev, shopCarParking: e.target.value }))}
                     className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                   />
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Bike Parking</label>
+                {/* Bike Parking */}
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Bike Parking (बाइक पार्किङ)</label>
                   <input
                     type="number"
                     min={0}
                     placeholder="e.g., 2"
-                    value={tempFilters.shopBikeParking}
+                    value={tempFilters.shopBikeParking || ''}
                     onChange={(e) => setTempFilters(prev => ({ ...prev, shopBikeParking: e.target.value }))}
                     className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                   />
@@ -541,11 +691,11 @@ const ComprehensiveFilterPanel = ({
               </>
             )}
 
-            {/* Shop Road Type */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Road Type (बाटोको प्रकार)</label>
+            {/* Road Type */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Road Type (बाटोको प्रकार)</label>
               <select
-                value={tempFilters.shopRoadType}
+                value={tempFilters.shopRoadType || ''}
                 onChange={(e) => setTempFilters(prev => ({ ...prev, shopRoadType: e.target.value }))}
                 className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm bg-white"
               >
