@@ -1,10 +1,78 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
+import { User, Session, Provider } from "@supabase/supabase-js";
 
-const AuthContext = createContext({});
+// Define the profile type
+interface Profile {
+  id?: string;
+  user_id: string;
+  user_role?: string;
+  full_name?: string;
+  email?: string;
+  phone?: string;
+  avatar_url?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Define the auth context type
+interface AuthContextType {
+  user: User | null;
+  profile: Profile | null;
+  session: Session | null;
+  loading: boolean;
+  signUp: (
+    email: string,
+    password: string,
+    metadata?: any
+  ) => Promise<{ data: any; error: any }>;
+  signIn: (
+    email: string,
+    password: string
+  ) => Promise<{ data: any; error: any }>;
+  signInWithOAuth: (
+    provider: Provider,
+    options?: any
+  ) => Promise<{ data: any; error: any }>;
+  signOut: () => Promise<{ error: any }>;
+  resetPassword: (email: string) => Promise<{ error: any }>;
+  updatePassword: (newPassword: string) => Promise<{ error: any }>;
+  updateProfile: (updates: any) => Promise<{ error: any }>;
+  hasRole: (role: string) => boolean;
+  isAdmin: () => boolean;
+  isAgent: () => boolean;
+  isBuyer: () => boolean;
+  supabase: any;
+}
+
+// Create context with default values
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  profile: null,
+  session: null,
+  loading: true,
+  signUp: async () => ({ data: null, error: null }),
+  signIn: async () => ({ data: null, error: null }),
+  signInWithOAuth: async () => ({ data: null, error: null }),
+  signOut: async () => ({ error: null }),
+  resetPassword: async () => ({ error: null }),
+  updatePassword: async () => ({ error: null }),
+  updateProfile: async () => ({ error: null }),
+  hasRole: () => false,
+  isAdmin: () => false,
+  isAgent: () => false,
+  isBuyer: () => false,
+  supabase: createClient(),
+});
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -14,11 +82,11 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [session, setSession] = useState(null);
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [session, setSession] = useState<Session | null>(null);
 
   const supabase = createClient();
 
@@ -74,7 +142,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Fetch user profile from our profiles table
-  const fetchUserProfile = async (userId) => {
+  const fetchUserProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from("profiles")
@@ -96,7 +164,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Sign up function
-  const signUp = async (email, password, metadata = {}) => {
+  const signUp = async (
+    email: string,
+    password: string,
+    metadata: any = {}
+  ) => {
     try {
       setLoading(true);
       const { data, error } = await supabase.auth.signUp({
@@ -110,7 +182,7 @@ export const AuthProvider = ({ children }) => {
       if (error) throw error;
 
       return { data, error: null };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Sign up error:", error);
       return { data: null, error };
     } finally {
@@ -119,7 +191,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Sign in with email and password
-  const signIn = async (email, password) => {
+  const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -131,9 +203,9 @@ export const AuthProvider = ({ children }) => {
 
       toast.success("Signed in successfully!");
       return { data, error: null };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Sign in error:", error);
-      toast.error(error.message || "Failed to sign in");
+      toast.error(error?.message || "Failed to sign in");
       return { data: null, error };
     } finally {
       setLoading(false);
@@ -141,7 +213,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Sign in with OAuth (Google, etc.)
-  const signInWithOAuth = async (provider, options = {}) => {
+  const signInWithOAuth = async (provider: Provider, options: any = {}) => {
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
@@ -154,9 +226,9 @@ export const AuthProvider = ({ children }) => {
       if (error) throw error;
 
       return { data, error: null };
-    } catch (error) {
+    } catch (error: any) {
       console.error("OAuth sign in error:", error);
-      toast.error(error.message || "Failed to sign in with OAuth");
+      toast.error(error?.message || "Failed to sign in with OAuth");
       return { data: null, error };
     }
   };
@@ -174,15 +246,15 @@ export const AuthProvider = ({ children }) => {
       toast.success("Signed out successfully!");
 
       return { error: null };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Sign out error:", error);
-      toast.error(error.message || "Failed to sign out");
+      toast.error(error?.message || "Failed to sign out");
       return { error };
     }
   };
 
   // Reset password
-  const resetPassword = async (email) => {
+  const resetPassword = async (email: string) => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
@@ -192,15 +264,15 @@ export const AuthProvider = ({ children }) => {
 
       toast.success("Password reset email sent!");
       return { error: null };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Password reset error:", error);
-      toast.error(error.message || "Failed to send reset email");
+      toast.error(error?.message || "Failed to send reset email");
       return { error };
     }
   };
 
   // Update password
-  const updatePassword = async (newPassword) => {
+  const updatePassword = async (newPassword: string) => {
     try {
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
@@ -210,15 +282,15 @@ export const AuthProvider = ({ children }) => {
 
       toast.success("Password updated successfully!");
       return { error: null };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Password update error:", error);
-      toast.error(error.message || "Failed to update password");
+      toast.error(error?.message || "Failed to update password");
       return { error };
     }
   };
 
   // Update profile
-  const updateProfile = async (updates) => {
+  const updateProfile = async (updates: any) => {
     try {
       if (!user) throw new Error("No user logged in");
 
@@ -237,15 +309,15 @@ export const AuthProvider = ({ children }) => {
       toast.success("Profile updated successfully!");
 
       return { error: null };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Profile update error:", error);
-      toast.error(error.message || "Failed to update profile");
+      toast.error(error?.message || "Failed to update profile");
       return { error };
     }
   };
 
   // Check if user has specific role
-  const hasRole = (role) => {
+  const hasRole = (role: string) => {
     return profile?.user_role === role;
   };
 

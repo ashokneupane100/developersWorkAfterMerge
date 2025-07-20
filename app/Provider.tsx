@@ -7,7 +7,7 @@ import Footer from "./_components/Footer";
 // AuthProvider removed - now handled in layout.js
 import { usePathname } from "next/navigation";
 
-function Provider({ children }) {
+function Provider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [clientPathname, setClientPathname] = useState("");
 

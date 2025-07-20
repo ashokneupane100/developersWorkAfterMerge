@@ -20,7 +20,7 @@ const LoginNew = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user && profile && !loading) {
-      const role = profile.user_role?.toLowerCase();
+      const role = profile?.user_role?.toLowerCase();
       if (role === "admin") {
         router.push("/admin");
       } else {
@@ -37,7 +37,7 @@ const LoginNew = () => {
     }
   }, [searchParams]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");

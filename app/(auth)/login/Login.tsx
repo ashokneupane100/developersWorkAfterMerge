@@ -65,12 +65,13 @@ const Login = () => {
       const result = await signIn(email, password);
 
       if (result?.error) {
-        setError(result.error);
+        setError(result.error.message || result.error);
         setIsLoading(false);
         return;
       }
 
-      const { user, token, role } = result;
+      // With Supabase, user info comes from the auth context after successful sign in
+      // The auth context will automatically update with user/profile info
 
       if (typeof window !== "undefined") {
         sessionStorage.setItem("email", email);
@@ -78,15 +79,8 @@ const Login = () => {
         document.cookie = `email=${email}; path=/`;
       }
 
-      // ✅ Redirect based on user_role
-      const roleLower = role?.toLowerCase();
-      if (roleLower === "admin") {
-        router.push("/admin");
-      } else if (roleLower === "buyer" || roleLower === "agent") {
-        router.push("/user");
-      } else {
-        setError("Unauthorized role");
-      }
+      // ✅ Redirect will be handled by useEffect when auth context updates
+      // No immediate redirect needed here as auth context handles it
     } catch (err) {
       console.error("Login error:", err);
       setError("An error occurred during login");
