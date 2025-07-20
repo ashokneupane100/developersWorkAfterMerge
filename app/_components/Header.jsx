@@ -150,17 +150,22 @@ const Header = memo(function Header() {
         <div className="hidden md:flex px-4 lg:px-8 py-4 items-center justify-between max-w-7xl mx-auto">
           {/* Logo */}
           <Link href="/" prefetch={false}>
-            <div className="flex items-center">
-              <Image 
-                src={logo} 
-                width={140} 
-                height={140} 
-                alt="logo" 
-                priority 
-                className="object-contain" 
-              />
-              
-            </div>
+          <div className="flex items-center">
+                <Image
+                  src={logo}
+                  width={50}
+                  height={50}
+                  alt="logo"
+                  priority
+                  className="object-contain w-50 h-50"
+                />
+                <h1 className="ml-2 font-bold text-green-800 text-lg leading-tight text-center pt-1">
+                  onlinehome
+                  <span className="block text-xs text-green-700">
+                  बर्षौं बर्षको बलियो सम्बन्ध
+                  </span>
+                </h1>
+              </div>
           </Link>
 
           {/* Action Buttons */}
