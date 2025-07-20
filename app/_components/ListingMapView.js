@@ -1,21 +1,21 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import Listing from "./Listing";
-import { supabase } from '@/utils/supabase/client';
+import ListingNew from "./ListingNew";
+import { supabase } from "@/utils/supabase/client";
 import { toast } from "sonner";
 import OpenStreetMapSection from "./OpenStreetMapSection";
 import LoanCalculator from "@/components/helpers/loanCalculator";
 import Link from "next/link";
-import { 
-  MapIcon, 
-  CalculatorIcon, 
-  FunnelIcon, 
+import {
+  MapIcon,
+  CalculatorIcon,
+  FunnelIcon,
   XMarkIcon,
   HomeIcon,
   CurrencyDollarIcon,
   BuildingOfficeIcon,
   MagnifyingGlassIcon,
-  AdjustmentsHorizontalIcon
+  AdjustmentsHorizontalIcon,
 } from "@heroicons/react/24/outline";
 
 function ListingMapView({
@@ -41,21 +41,21 @@ function ListingMapView({
   // Filter UI state
   const [showFilters, setShowFilters] = useState(false);
   const [tempFilters, setTempFilters] = useState({
-    minPrice: '',
-    maxPrice: '',
-    minArea: '',
-    maxArea: '',
+    minPrice: "",
+    maxPrice: "",
+    minArea: "",
+    maxArea: "",
     rooms: 0,
     bathrooms: 0,
     parking: 0,
-    propertyType: 'All'
+    propertyType: "All",
   });
 
   // Initialize with props
   useEffect(() => {
     setCurrentAction(initialAction);
     setPropertyType(initialPropertyType);
-    setTempFilters(prev => ({ ...prev, propertyType: initialPropertyType }));
+    setTempFilters((prev) => ({ ...prev, propertyType: initialPropertyType }));
   }, [initialAction, initialPropertyType]);
 
   const fetchListings = async (action, setPrimarySecondary = true) => {
@@ -128,12 +128,12 @@ function ListingMapView({
     setBathRoomsCount(tempFilters.bathrooms);
     setParkingCount(tempFilters.parking);
     setPropertyType(tempFilters.propertyType);
-    
+
     // Set price range
     if (tempFilters.minPrice || tempFilters.maxPrice) {
       setPriceRange({
         min: tempFilters.minPrice ? parseInt(tempFilters.minPrice) : 0,
-        max: tempFilters.maxPrice ? parseInt(tempFilters.maxPrice) : Infinity
+        max: tempFilters.maxPrice ? parseInt(tempFilters.maxPrice) : Infinity,
       });
     } else {
       setPriceRange(null);
@@ -143,7 +143,7 @@ function ListingMapView({
     if (tempFilters.minArea || tempFilters.maxArea) {
       setArea({
         min: tempFilters.minArea ? parseInt(tempFilters.minArea) : 0,
-        max: tempFilters.maxArea ? parseInt(tempFilters.maxArea) : Infinity
+        max: tempFilters.maxArea ? parseInt(tempFilters.maxArea) : Infinity,
       });
     } else {
       setArea(null);
@@ -156,24 +156,24 @@ function ListingMapView({
 
   const handleClearFilters = () => {
     setTempFilters({
-      minPrice: '',
-      maxPrice: '',
-      minArea: '',
-      maxArea: '',
+      minPrice: "",
+      maxPrice: "",
+      minArea: "",
+      maxArea: "",
       rooms: 0,
       bathrooms: 0,
       parking: 0,
-      propertyType: 'All'
+      propertyType: "All",
     });
-    
+
     setRoomsCount(0);
     setBathRoomsCount(0);
     setParkingCount(0);
     setPriceRange(null);
     setArea(null);
-    setPropertyType('All');
+    setPropertyType("All");
     setIsFilterApplied(false);
-    
+
     toast.success("Filters cleared!");
   };
 
@@ -185,17 +185,24 @@ function ListingMapView({
     if (tempFilters.rooms > 0) count++;
     if (tempFilters.bathrooms > 0) count++;
     if (tempFilters.parking > 0) count++;
-    if (tempFilters.propertyType !== 'All') count++;
+    if (tempFilters.propertyType !== "All") count++;
     return count;
   };
 
   const activeFiltersCount = getActiveFiltersCount();
 
-  const propertyTypes = ['All', 'House', 'Apartment', 'Condo', 'Townhouse', 'Villa', 'Studio'];
+  const propertyTypes = [
+    "All",
+    "House",
+    "Apartment",
+    "Condo",
+    "Townhouse",
+    "Villa",
+    "Studio",
+  ];
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-
       {/* Active Filters Display */}
       {isFilterApplied && (
         <div className="bg-blue-50 border-b border-blue-200 px-4 py-3">
@@ -206,12 +213,14 @@ function ListingMapView({
               <div className="flex gap-2 flex-wrap">
                 {priceRange && (
                   <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-                    ${priceRange.min || 0} - ${priceRange.max === Infinity ? '∞' : priceRange.max}
+                    ${priceRange.min || 0} - $
+                    {priceRange.max === Infinity ? "∞" : priceRange.max}
                   </span>
                 )}
                 {area && (
                   <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-                    {area.min || 0} - {area.max === Infinity ? '∞' : area.max} sq ft
+                    {area.min || 0} - {area.max === Infinity ? "∞" : area.max}{" "}
+                    sq ft
                   </span>
                 )}
                 {roomsCount > 0 && (
@@ -229,7 +238,7 @@ function ListingMapView({
                     {parkingCount}+ parking
                   </span>
                 )}
-                {propertyType !== 'All' && (
+                {propertyType !== "All" && (
                   <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
                     {propertyType}
                   </span>
@@ -248,26 +257,14 @@ function ListingMapView({
 
       {/* Main Listing Component */}
       <div className="w-full">
-        <Listing
+        <ListingNew
           listing={primaryListings}
           secondaryListings={secondaryListings}
-          handleSearchClick={handleSearchClick}
-          searchedAddress={setSearchedAddress}
-          setBathRoomsCount={setBathRoomsCount}
-          setRoomsCount={setRoomsCount}
-          setParkingCount={setParkingCount}
-          setPriceRange={setPriceRange}
-          setArea={setArea}
           currentAction={currentAction}
           setCurrentAction={setCurrentAction}
           propertyType={propertyType}
           setPropertyType={setPropertyType}
           setCoordinates={setCoordinates}
-          setListing={setPrimaryListings}
-          setSecondaryListings={setSecondaryListings}
-          isSearchPerformed={isSearchPerformed}
-          isFilterApplied={isFilterApplied}
-          address={address}
           onAddressDataUpdate={handleListingUpdate}
         />
       </div>
@@ -281,7 +278,7 @@ function ListingMapView({
               <div className="flex items-center gap-2">
                 <MapIcon className="h-5 w-5 text-blue-600" />
                 <h2 className="text-lg font-medium text-gray-900">
-                  Property Map 
+                  Property Map
                   {mapListings.length > 0 && (
                     <span className="text-sm font-normal text-gray-600 ml-2">
                       ({mapListings.length} properties)
@@ -308,7 +305,9 @@ function ListingMapView({
             <div className="p-4 border-b border-gray-200 bg-gray-50">
               <div className="flex items-center gap-2">
                 <CalculatorIcon className="h-5 w-5 text-blue-600" />
-                <h2 className="text-lg font-medium text-gray-900">Loan Calculator</h2>
+                <h2 className="text-lg font-medium text-gray-900">
+                  Loan Calculator
+                </h2>
               </div>
             </div>
             <div className="h-[500px] overflow-y-auto">

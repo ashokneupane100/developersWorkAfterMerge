@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from '@/components/Provider/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { Building2, User, Edit, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -20,7 +20,9 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 function UserProfile() {
-  const { user, isAuthenticated, isLoading, signOut } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
+  const isAuthenticated = !!user;
+  const isLoading = loading;
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("my-listing");
   

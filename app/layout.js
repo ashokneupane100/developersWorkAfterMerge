@@ -4,7 +4,7 @@ import "./globals.css";
 import Provider from "./Provider.tsx";
 import { Toaster } from "@/components/ui/sonner";
 import Header from "./_components/Header";
-import AuthProvider from "@/components/Provider/AuthProvider";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { HeroUIProvider } from "@heroui/react";
 
 

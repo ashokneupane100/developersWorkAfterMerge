@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { useAuth } from "@/components/Provider/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Define the User type based on your useAuth implementation
 interface User {
@@ -22,7 +22,9 @@ interface Profile {
 }
 
 export default function UserProfile() {
-  const { user, isLoading, isAuthenticated } = useAuth();
+  const { user, loading } = useAuth();
+  const isLoading = loading;
+  const isAuthenticated = !!user;
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
 

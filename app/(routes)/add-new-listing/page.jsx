@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/utils/supabase/client";
-import { useAuth } from "@/components/Provider/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { Loader } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
@@ -15,7 +15,7 @@ import Loading from "./loading";
 function AddNewListing() {
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [coordinates, setCoordinates] = useState({ lat: null, lng: null });
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [loader, setLoader] = useState(false);
   const router = useRouter();
 

@@ -8,10 +8,10 @@ import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/components/helpers/formatCurrency';
-import { useAuth } from '@/components/Provider/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 function UserListing() {
-    const { user, isLoading: authLoading } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const [listing, setListing] = useState([]);
     const [loading, setLoading] = useState(true);
 

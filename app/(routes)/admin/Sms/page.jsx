@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from "@/components/Provider/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/utils/supabase/client";
 import { Loader, Send, RefreshCw, MapPin, Home, Building, Leaf, ShoppingBag } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ const propertyTypeIcons = {
 };
 
 export default function SmsNotificationDashboard() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [recentRequests, setRecentRequests] = useState([]);

@@ -13,7 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { FiPhoneCall } from 'react-icons/fi';
 import { Button } from "@heroui/react";
-import { useAuth } from "../../components/Provider/useAuth"
+import { useAuth } from "@/contexts/AuthContext"
 import logo from "../../public/assets/images/homeLogo.png";
 // Custom Dropdown Components
 const CustomDropdown = ({ trigger, children }) => {
@@ -84,10 +84,38 @@ const DropdownItem = ({ children, startContent, onClick, href, className = "" })
 const buttonClass = `animateGradient text-white font-bold py-1.5 px-3 rounded-lg flex items-center justify-center gap-2 transition-colors duration-300 hover:opacity-90`;
 
 const Header = memo(function Header() {
-  const { user, isAuthenticated, isLoading, signOut } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
+  const isAuthenticated = !!user;
+  const isLoading = loading;
   
-  const handleLogout = () => {
-    signOut({ callbackUrl: '/login' });
+  const handleLogout = async () => {
+    await signOut();
+    window.location.href = '/login';
+  };
+
+  // Helper function to get user initials
+  const getUserInitials = () => {
+    const fullName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || '';
+    const nameParts = fullName.trim().split(' ');
+    
+    if (nameParts.length >= 2) {
+      // First letter of first name + first letter of last name
+      return (nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0)).toUpperCase();
+    } else if (nameParts.length === 1 && nameParts[0].length >= 2) {
+      // If only one name, take first two letters
+      return nameParts[0].substring(0, 2).toUpperCase();
+    }
+    return 'U';
+  };
+
+  // Helper function to get display name
+  const getDisplayName = () => {
+    return profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+  };
+
+  // Helper function to get avatar image
+  const getAvatarImage = () => {
+    return profile?.avatar_url || user?.user_metadata?.avatar_url || user?.user_metadata?.picture || null;
   };
 
   return (
@@ -163,28 +191,31 @@ const Header = memo(function Header() {
             {isAuthenticated ? (
               <CustomDropdown
                 trigger={
-                  <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 rounded-lg p-2 transition-colors">
+                  <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-100 rounded-lg p-2 transition-colors">
                     <div 
-                      className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center overflow-hidden"
+                      className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center overflow-hidden"
                     >
-                      {user?.image ? (
+                      {getAvatarImage() ? (
                         <Image 
-                          src={user.image} 
-                          width={32} 
-                          height={32} 
-                          alt={user?.name || "User"} 
+                          src={getAvatarImage()} 
+                          width={40} 
+                          height={40} 
+                          alt={getDisplayName()} 
                           className="object-cover w-full h-full"
                         />
                       ) : (
                         <div 
-                          className="w-full h-full flex items-center justify-center bg-green-100 text-green-800 font-bold"
+                          className="w-full h-full flex items-center justify-center bg-green-100 text-green-800 font-bold text-sm"
                           style={{ background: "#AFE1AF" }}
                         >
-                          {user?.name?.charAt(0) || "U"}
+                          {getUserInitials()}
                         </div>
                       )}
                     </div>
-                    <span className="text-sm font-medium text-gray-800">{user?.name}</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-gray-800 leading-tight">{getDisplayName()}</span>
+                      <span className="text-xs text-gray-500 leading-tight">{profile?.user_role || 'User'}</span>
+                    </div>
                   </div>
                 }
               >
@@ -248,25 +279,31 @@ const Header = memo(function Header() {
             {isAuthenticated ? (
               <CustomDropdown
                 trigger={
-                  <div 
-                    className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center overflow-hidden cursor-pointer"
-                  >
-                    {user?.image ? (
-                      <Image 
-                        src={user.image} 
-                        width={32} 
-                        height={32} 
-                        alt={user?.name || "User"} 
-                        className="object-cover w-full h-full"
-                      />
-                    ) : (
-                      <div 
-                        className="w-full h-full flex items-center justify-center bg-green-100 text-green-800 font-bold"
-                        style={{ background: "#AFE1AF" }}
-                      >
-                        {user?.name?.charAt(0) || "U"}
-                      </div>
-                    )}
+                  <div className="flex items-center gap-2 cursor-pointer">
+                    <div 
+                      className="w-9 h-9 rounded-full bg-yellow-100 flex items-center justify-center overflow-hidden"
+                    >
+                      {getAvatarImage() ? (
+                        <Image 
+                          src={getAvatarImage()} 
+                          width={36} 
+                          height={36} 
+                          alt={getDisplayName()} 
+                          className="object-cover w-full h-full"
+                        />
+                      ) : (
+                        <div 
+                          className="w-full h-full flex items-center justify-center bg-green-100 text-green-800 font-bold text-xs"
+                          style={{ background: "#AFE1AF" }}
+                        >
+                          {getUserInitials()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-medium text-gray-800 leading-tight">{getDisplayName()}</span>
+                      <span className="text-xs text-gray-500 leading-tight">{profile?.user_role || 'User'}</span>
+                    </div>
                   </div>
                 }
               >

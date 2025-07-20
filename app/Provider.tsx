@@ -4,10 +4,10 @@ import React, { useState, useEffect } from "react";
 import Header from "./_components/Header";
 import { LoadScript } from "@react-google-maps/api";
 import Footer from "./_components/Footer";
-import AuthProvider from "@/components/Provider/AuthProvider";
+// AuthProvider removed - now handled in layout.js
 import { usePathname } from "next/navigation";
 
-function Provider({ children }: any) {
+function Provider({ children }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [clientPathname, setClientPathname] = useState("");
 
@@ -21,16 +21,14 @@ function Provider({ children }: any) {
   }, []);
 
   return (
-    <AuthProvider>
-      <LoadScript
-        googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_PLACE_API_KEY!}
-        libraries={["places"]}
-      >
-        {!isAdmin && <Header />}
-        <div className="pt-[0rem]">{children}</div>
-        {!isAdmin && <Footer />}
-      </LoadScript>
-    </AuthProvider>
+    <LoadScript
+      googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_PLACE_API_KEY || ""}
+      libraries={["places"]}
+    >
+      {!isAdmin && <Header />}
+      <div className="pt-[0rem]">{children}</div>
+      {!isAdmin && <Footer />}
+    </LoadScript>
   );
 }
 

@@ -18,7 +18,7 @@ import * as Yup from "yup";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/utils/supabase/client";
 import { toast } from "sonner";
-import { useAuth } from "@/components/Provider/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import FileUpload from "../_components/FileUpload";
 import CurrencyInput from "react-currency-input-field";
 import { formatCurrency } from "@/components/helpers/formatCurrency";
@@ -93,7 +93,7 @@ const ListingSchema = Yup.object()
 function EditListing({ params: paramsPromise }) {
   const params = React.use(paramsPromise);
   const id = params.id;
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [listing, setListing] = useState(null);
   const [images, setImages] = useState([]);

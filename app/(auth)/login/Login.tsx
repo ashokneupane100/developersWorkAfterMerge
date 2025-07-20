@@ -10,13 +10,13 @@ import {
   CardBody,
   CardHeader,
   CardFooter,
-  Checkbox
+  Checkbox,
 } from "@heroui/react";
 import { EyeIcon, MailIcon, LockIcon } from "lucide-react";
 import EyeSlashIcon from "@heroicons/react/24/outline/EyeSlashIcon";
 import GoogleSignInButton from "./GoogleSignInButtton";
 import FacebookSignInButton from "./FacebookLogin";
-import { useAuth } from "@/components/Provider/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 const Login = () => {
@@ -27,7 +27,7 @@ const Login = () => {
   const [error, setError] = useState("");
   const [isVisible, setIsVisible] = useState(false);
   const router = useRouter();
-  const { signInWithCredentials } = useAuth();
+  const { signIn } = useAuth();
 
   useEffect(() => {
     const resetStatus = searchParams?.get("reset");
@@ -62,7 +62,7 @@ const Login = () => {
     try {
       clearStoredCredentials();
 
-      const result = await signInWithCredentials(email, password);
+      const result = await signIn(email, password);
 
       if (result?.error) {
         setError(result.error);
@@ -112,9 +112,20 @@ const Login = () => {
           {error && (
             <div className="bg-red-50 text-red-600 border border-red-200 rounded px-4 py-3 text-sm mb-4">
               <div className="flex items-center gap-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 9v5M12 17.01l.01-.011M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" 
-                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M12 9v5M12 17.01l.01-.011M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
                 {error}
               </div>
@@ -123,7 +134,9 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
-              <label htmlFor="email" className="text-sm font-medium">Email</label>
+              <label htmlFor="email" className="text-sm font-medium">
+                Email
+              </label>
               <Input
                 id="email"
                 type="email"
@@ -137,7 +150,9 @@ const Login = () => {
             </div>
 
             <div className="space-y-1">
-              <label htmlFor="password" className="text-sm font-medium">Password</label>
+              <label htmlFor="password" className="text-sm font-medium">
+                Password
+              </label>
               <Input
                 id="password"
                 type={isVisible ? "text" : "password"}
@@ -167,7 +182,10 @@ const Login = () => {
               <Checkbox size="sm">
                 <span className="text-sm">Remember me</span>
               </Checkbox>
-              <Link href="/forgot-password" className="text-blue-600 text-sm hover:underline">
+              <Link
+                href="/forgot-password"
+                className="text-blue-600 text-sm hover:underline"
+              >
                 Forgot password?
               </Link>
             </div>
@@ -192,7 +210,10 @@ const Login = () => {
           <div className="w-full text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{" "}
-              <Link href="/signup" className="text-blue-600 font-medium hover:underline">
+              <Link
+                href="/signup"
+                className="text-blue-600 font-medium hover:underline"
+              >
                 Sign up
               </Link>
             </p>
