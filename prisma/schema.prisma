@@ -1,0 +1,604 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["auth", "public"]
+}
+
+model audit_log_entries {
+  instance_id String?   @db.Uuid
+  id          String    @id @db.Uuid
+  payload     Json?     @db.Json
+  created_at  DateTime? @db.Timestamptz(6)
+  ip_address  String    @default("") @db.VarChar(64)
+
+  @@index([instance_id], map: "audit_logs_instance_id_idx")
+  @@schema("auth")
+}
+
+model flow_state {
+  id                     String                @id @db.Uuid
+  user_id                String?               @db.Uuid
+  auth_code              String
+  code_challenge_method  code_challenge_method
+  code_challenge         String
+  provider_type          String
+  provider_access_token  String?
+  provider_refresh_token String?
+  created_at             DateTime?             @db.Timestamptz(6)
+  updated_at             DateTime?             @db.Timestamptz(6)
+  authentication_method  String
+  auth_code_issued_at    DateTime?             @db.Timestamptz(6)
+  saml_relay_states      saml_relay_states[]
+
+  @@index([created_at(sort: Desc)])
+  @@index([auth_code], map: "idx_auth_code")
+  @@index([user_id, authentication_method], map: "idx_user_id_auth_method")
+  @@schema("auth")
+}
+
+model identities {
+  provider_id     String
+  user_id         String    @db.Uuid
+  identity_data   Json
+  provider        String
+  last_sign_in_at DateTime? @db.Timestamptz(6)
+  created_at      DateTime? @db.Timestamptz(6)
+  updated_at      DateTime? @db.Timestamptz(6)
+  email           String?   @default(dbgenerated("lower((identity_data ->> 'email'::text))"))
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  users           users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([provider_id, provider], map: "identities_provider_id_provider_unique")
+  @@index([email])
+  @@index([user_id])
+  @@schema("auth")
+}
+
+model instances {
+  id              String    @id @db.Uuid
+  uuid            String?   @db.Uuid
+  raw_base_config String?
+  created_at      DateTime? @db.Timestamptz(6)
+  updated_at      DateTime? @db.Timestamptz(6)
+
+  @@schema("auth")
+}
+
+model mfa_amr_claims {
+  session_id            String   @db.Uuid
+  created_at            DateTime @db.Timestamptz(6)
+  updated_at            DateTime @db.Timestamptz(6)
+  authentication_method String
+  id                    String   @id(map: "amr_id_pk") @db.Uuid
+  sessions              sessions @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([session_id, authentication_method], map: "mfa_amr_claims_session_id_authentication_method_pkey")
+  @@schema("auth")
+}
+
+model mfa_challenges {
+  id                     String      @id @db.Uuid
+  factor_id              String      @db.Uuid
+  created_at             DateTime    @db.Timestamptz(6)
+  verified_at            DateTime?   @db.Timestamptz(6)
+  ip_address             String      @db.Inet
+  otp_code               String?
+  web_authn_session_data Json?
+  mfa_factors            mfa_factors @relation(fields: [factor_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "mfa_challenges_auth_factor_id_fkey")
+
+  @@index([created_at(sort: Desc)], map: "mfa_challenge_created_at_idx")
+  @@schema("auth")
+}
+
+model mfa_factors {
+  id                   String           @id @db.Uuid
+  user_id              String           @db.Uuid
+  friendly_name        String?
+  factor_type          factor_type
+  status               factor_status
+  created_at           DateTime         @db.Timestamptz(6)
+  updated_at           DateTime         @db.Timestamptz(6)
+  secret               String?
+  phone                String?
+  last_challenged_at   DateTime?        @unique @db.Timestamptz(6)
+  web_authn_credential Json?
+  web_authn_aaguid     String?          @db.Uuid
+  mfa_challenges       mfa_challenges[]
+  users                users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, phone], map: "unique_phone_factor_per_user")
+  @@index([user_id, created_at], map: "factor_id_created_at_idx")
+  @@index([user_id])
+  @@schema("auth")
+}
+
+model one_time_tokens {
+  id         String              @id @db.Uuid
+  user_id    String              @db.Uuid
+  token_type one_time_token_type
+  token_hash String
+  relates_to String
+  created_at DateTime            @default(now()) @db.Timestamp(6)
+  updated_at DateTime            @default(now()) @db.Timestamp(6)
+  users      users               @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, token_type])
+  @@index([relates_to], map: "one_time_tokens_relates_to_hash_idx", type: Hash)
+  @@index([token_hash], map: "one_time_tokens_token_hash_hash_idx", type: Hash)
+  @@schema("auth")
+}
+
+model refresh_tokens {
+  instance_id String?   @db.Uuid
+  id          BigInt    @id @default(autoincrement())
+  token       String?   @unique(map: "refresh_tokens_token_unique") @db.VarChar(255)
+  user_id     String?   @db.VarChar(255)
+  revoked     Boolean?
+  created_at  DateTime? @db.Timestamptz(6)
+  updated_at  DateTime? @db.Timestamptz(6)
+  parent      String?   @db.VarChar(255)
+  session_id  String?   @db.Uuid
+  sessions    sessions? @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([instance_id])
+  @@index([instance_id, user_id])
+  @@index([parent])
+  @@index([session_id, revoked])
+  @@index([updated_at(sort: Desc)])
+  @@schema("auth")
+}
+
+model saml_providers {
+  id                String        @id @db.Uuid
+  sso_provider_id   String        @db.Uuid
+  entity_id         String        @unique
+  metadata_xml      String
+  metadata_url      String?
+  attribute_mapping Json?
+  created_at        DateTime?     @db.Timestamptz(6)
+  updated_at        DateTime?     @db.Timestamptz(6)
+  name_id_format    String?
+  sso_providers     sso_providers @relation(fields: [sso_provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([sso_provider_id])
+  @@schema("auth")
+}
+
+model saml_relay_states {
+  id              String        @id @db.Uuid
+  sso_provider_id String        @db.Uuid
+  request_id      String
+  for_email       String?
+  redirect_to     String?
+  created_at      DateTime?     @db.Timestamptz(6)
+  updated_at      DateTime?     @db.Timestamptz(6)
+  flow_state_id   String?       @db.Uuid
+  flow_state      flow_state?   @relation(fields: [flow_state_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sso_providers   sso_providers @relation(fields: [sso_provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at(sort: Desc)])
+  @@index([for_email])
+  @@index([sso_provider_id])
+  @@schema("auth")
+}
+
+model schema_migrations {
+  version String @id @db.VarChar(255)
+
+  @@schema("auth")
+}
+
+model sessions {
+  id             String           @id @db.Uuid
+  user_id        String           @db.Uuid
+  created_at     DateTime?        @db.Timestamptz(6)
+  updated_at     DateTime?        @db.Timestamptz(6)
+  factor_id      String?          @db.Uuid
+  aal            aal_level?
+  not_after      DateTime?        @db.Timestamptz(6)
+  refreshed_at   DateTime?        @db.Timestamp(6)
+  user_agent     String?
+  ip             String?          @db.Inet
+  tag            String?
+  mfa_amr_claims mfa_amr_claims[]
+  refresh_tokens refresh_tokens[]
+  users          users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([not_after(sort: Desc)])
+  @@index([user_id])
+  @@index([user_id, created_at], map: "user_id_created_at_idx")
+  @@schema("auth")
+}
+
+model sso_domains {
+  id              String        @id @db.Uuid
+  sso_provider_id String        @db.Uuid
+  domain          String
+  created_at      DateTime?     @db.Timestamptz(6)
+  updated_at      DateTime?     @db.Timestamptz(6)
+  sso_providers   sso_providers @relation(fields: [sso_provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([sso_provider_id])
+  @@schema("auth")
+}
+
+model sso_providers {
+  id                String              @id @db.Uuid
+  resource_id       String?
+  created_at        DateTime?           @db.Timestamptz(6)
+  updated_at        DateTime?           @db.Timestamptz(6)
+  saml_providers    saml_providers[]
+  saml_relay_states saml_relay_states[]
+  sso_domains       sso_domains[]
+
+  @@schema("auth")
+}
+
+model users {
+  instance_id                 String?              @db.Uuid
+  id                          String               @id @db.Uuid
+  aud                         String?              @db.VarChar(255)
+  role                        String?              @db.VarChar(255)
+  email                       String?              @unique @db.VarChar(255)
+  encrypted_password          String?              @db.VarChar(255)
+  email_confirmed_at          DateTime?            @db.Timestamptz(6)
+  invited_at                  DateTime?            @db.Timestamptz(6)
+  confirmation_token          String?              @db.VarChar(255)
+  confirmation_sent_at        DateTime?            @db.Timestamptz(6)
+  recovery_token              String?              @db.VarChar(255)
+  recovery_sent_at            DateTime?            @db.Timestamptz(6)
+  email_change_token_new      String?              @db.VarChar(255)
+  email_change                String?              @db.VarChar(255)
+  email_change_sent_at        DateTime?            @db.Timestamptz(6)
+  last_sign_in_at             DateTime?            @db.Timestamptz(6)
+  raw_app_meta_data           Json?
+  raw_user_meta_data          Json?
+  is_super_admin              Boolean?
+  created_at                  DateTime?            @db.Timestamptz(6)
+  updated_at                  DateTime?            @db.Timestamptz(6)
+  phone                       String?              @unique
+  phone_confirmed_at          DateTime?            @db.Timestamptz(6)
+  phone_change                String?              @default("")
+  phone_change_token          String?              @default("") @db.VarChar(255)
+  phone_change_sent_at        DateTime?            @db.Timestamptz(6)
+  confirmed_at                DateTime?            @default(dbgenerated("LEAST(email_confirmed_at, phone_confirmed_at)")) @db.Timestamptz(6)
+  email_change_token_current  String?              @default("") @db.VarChar(255)
+  email_change_confirm_status Int?                 @default(0) @db.SmallInt
+  banned_until                DateTime?            @db.Timestamptz(6)
+  reauthentication_token      String?              @default("") @db.VarChar(255)
+  reauthentication_sent_at    DateTime?            @db.Timestamptz(6)
+  is_sso_user                 Boolean              @default(false)
+  deleted_at                  DateTime?            @db.Timestamptz(6)
+  is_anonymous                Boolean              @default(false)
+  identities                  identities[]
+  mfa_factors                 mfa_factors[]
+  one_time_tokens             one_time_tokens[]
+  sessions                    sessions[]
+  profiles                    profiles?
+  verification_codes          verification_codes[]
+
+  @@index([email])
+  @@index([instance_id])
+  @@index([is_anonymous])
+  @@schema("auth")
+}
+
+model chatwoot_contacts {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  full_name  String?
+  email      String?
+  phone      String?
+
+  @@schema("public")
+}
+
+model listing {
+  id                  BigInt                @id @default(autoincrement())
+  created_at          DateTime              @default(now()) @db.Timestamptz(6)
+  full_address        String?               @db.VarChar
+  coordinates         Json?                 @db.Json
+  createdBy           String                @db.VarChar
+  active              Boolean?              @default(true)
+  propertyType        String?               @default("House") @db.VarChar
+  rooms               Decimal?              @db.Decimal
+  bathrooms           String?               @db.VarChar
+  parking             String?               @db.VarChar
+  area                String?               @db.VarChar
+  price               Float?                @db.Real
+  description         String?
+  profileImage        String?               @db.VarChar
+  fullName            String?               @db.VarChar
+  action              String?               @default("'Rent'::character varying") @db.VarChar
+  gharbeti_number     String?               @db.VarChar
+  real_address_       String?               @db.VarChar
+  gharbeti_name       String?               @db.VarChar
+  phone               String?               @db.VarChar
+  post_title          String?               @db.VarChar
+  sold                Boolean?              @default(false)
+  views               BigInt?
+  khali_hune_date     DateTime?             @db.Date
+  address             String?               @db.VarChar
+  admin_status        String?               @default("Pending")
+  isFeatured          Boolean?              @default(false)
+  petsAllowed         String?               @db.VarChar
+  waterType           water_type_enum[]
+  roomType            String?               @db.VarChar
+  listingImages       listingImages[]
+  listingVideos       listingVideos[]
+  listing_water_types listing_water_types[]
+  sent_notifications  sent_notifications[]
+
+  @@schema("public")
+}
+
+model listingImages {
+  id         BigInt   @id @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  url        String?  @db.VarChar
+  listing_id BigInt?
+  listing    listing? @relation(fields: [listing_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+model listingVideos {
+  id         BigInt   @id(map: "listingvideos_pkey") @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  url        String?  @db.VarChar
+  listing_id BigInt?
+  listing    listing? @relation(fields: [listing_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "listingvideos_listing_id_fkey")
+
+  @@schema("public")
+}
+
+model listing_water_types {
+  listing_id    BigInt
+  water_type_id Int
+  listing       listing     @relation(fields: [listing_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  water_types   water_types @relation(fields: [water_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([listing_id, water_type_id])
+  @@schema("public")
+}
+
+model pending_listings {
+  id                   BigInt                 @id @default(autoincrement())
+  created_at           DateTime?              @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime?              @default(now()) @db.Timestamptz(6)
+  address              String
+  coordinates          Json?
+  action               String
+  propertytype         String
+  rooms                Int?
+  bathrooms            String?
+  parking              String?
+  area                 String
+  price                Decimal                @db.Decimal(15, 2)
+  post_title           String
+  description          String
+  phone                String
+  createdby            String
+  fullname             String?
+  profileimage         String?
+  status               String?                @default("pending")
+  admin_notes          String?
+  approved_by          String?
+  approved_at          DateTime?              @db.Timestamptz(6)
+  rejected_at          DateTime?              @db.Timestamptz(6)
+  active               Boolean?               @default(true)
+  views                Int?                   @default(0)
+  sold                 Boolean?               @default(false)
+  khali_hune_date      DateTime?              @db.Date
+  pendinglistingimages pendinglistingimages[]
+
+  @@index([action], map: "idx_pending_listings_action")
+  @@index([created_at(sort: Desc)], map: "idx_pending_listings_created_at")
+  @@index([createdby], map: "idx_pending_listings_created_by")
+  @@index([propertytype], map: "idx_pending_listings_property_type")
+  @@index([status], map: "idx_pending_listings_status")
+  @@schema("public")
+}
+
+model pendinglistingimages {
+  id                 BigInt           @id @default(autoincrement())
+  pending_listing_id BigInt
+  url                String
+  created_at         DateTime?        @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  pending_listings   pending_listings @relation(fields: [pending_listing_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pending_listing")
+
+  @@schema("public")
+}
+
+model profiles {
+  id                  String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  full_name           String?
+  email               String    @unique
+  avatar_url          String?
+  email_verified      Boolean?  @default(false)
+  password_updated_at DateTime? @db.Timestamptz(6)
+  latitude            Float?
+  longitude           Float?
+  location_updated_at DateTime? @db.Timestamptz(6)
+  location_permission Boolean?  @default(false)
+  full_address        String?
+  address             String?
+  created_at          DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime? @default(now()) @db.Timestamptz(6)
+  user_role           user_role @default(Buyer)
+  auth_provider       String?   @default("email")
+  phone               String?
+  is_number_verified  Boolean?  @default(false)
+  user_id             String    @unique @db.Uuid
+  users               users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+model property_requests {
+  id                      String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at              DateTime?            @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime?            @default(now()) @db.Timestamptz(6)
+  full_name               String
+  email                   String
+  phone                   String
+  property_type           String
+  location                String
+  coordinates             String?
+  budget                  String
+  financing               Boolean              @default(false)
+  area                    String?
+  area_unit               String?
+  road_width              String?
+  road_width_unit         String?
+  number_of_rooms         Int?
+  number_of_people        String?
+  additional_requirements String?
+  status                  String?              @default("pending")
+  admin_notes             String?
+  hasPaid                 String               @default("no")
+  emailCount              Int                  @default(0)
+  messageCount            Int                  @default(0)
+  lastlistingsent         String?              @db.Uuid
+  sent_notifications      sent_notifications[]
+
+  @@index([created_at], map: "idx_property_requests_created_at")
+  @@index([email], map: "idx_property_requests_email")
+  @@index([location], map: "idx_property_requests_location")
+  @@index([property_type], map: "idx_property_requests_property_type")
+  @@index([status], map: "idx_property_requests_status")
+  @@schema("public")
+}
+
+model requestedproperties {
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  created_at             DateTime? @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  fullname               String
+  email                  String
+  phone                  String
+  propertytype           String
+  location               String
+  coordinates            Json
+  budget                 String
+  financing              Boolean?  @default(false)
+  area                   String?
+  areaunit               String?
+  roadwidth              String?
+  roadwidthunit          String?
+  numberofrooms          Int?
+  numberofpeople         Int?
+  additionalrequirements String?
+  sms_sent_status        String?   @default("❌❌❌❌❌")
+  sms_sent_count         Int?      @default(0)
+
+  @@schema("public")
+}
+
+model sent_notifications {
+  id                String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  request_id        String?            @db.Uuid
+  listing_id        BigInt?
+  sent_at           DateTime?          @default(now()) @db.Timestamptz(6)
+  listing           listing?           @relation(fields: [listing_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  property_requests property_requests? @relation(fields: [request_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([request_id, listing_id])
+  @@schema("public")
+}
+
+model verification_codes {
+  id         Int       @id @default(autoincrement())
+  email      String
+  code       String
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  expires_at DateTime  @db.Timestamptz(6)
+  verified   Boolean?  @default(false)
+  attempts   Int?      @default(0)
+  user_id    String?   @db.Uuid
+  users      users?    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_verification_codes_user_id")
+  @@schema("public")
+}
+
+model water_types {
+  id                  Int                   @id @default(autoincrement())
+  name                String                @unique
+  listing_water_types listing_water_types[]
+
+  @@schema("public")
+}
+
+enum aal_level {
+  aal1
+  aal2
+  aal3
+
+  @@schema("auth")
+}
+
+enum code_challenge_method {
+  s256
+  plain
+
+  @@schema("auth")
+}
+
+enum factor_status {
+  unverified
+  verified
+
+  @@schema("auth")
+}
+
+enum factor_type {
+  totp
+  webauthn
+  phone
+
+  @@schema("auth")
+}
+
+enum one_time_token_type {
+  confirmation_token
+  reauthentication_token
+  recovery_token
+  email_change_token_new
+  email_change_token_current
+  phone_change_token
+
+  @@schema("auth")
+}
+
+enum user_role {
+  Admin
+  Agent
+  Buyer
+
+  @@schema("public")
+}
+
+enum water_type_enum {
+  hour_water_on_tap @map("24 hour water on tap")
+  Storage_water     @map("Storage water")
+  Inar_water        @map("Inar water")
+
+  @@schema("public")
+}
+
+model testByAshok {
+  id                String   @id @default(cuid())
+  property_name     String
+  property_type     String
+  property_location String
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  @@map("testByAshok")
+  @@schema("public")
+}
