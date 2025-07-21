@@ -91,20 +91,79 @@ CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON public.profiles(user_id);
 -- Function to automatically create profile after user signup (trigger)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  user_full_name TEXT;
+  user_email TEXT;
+  auth_provider TEXT;
+  avatar_url TEXT;
 BEGIN
-  INSERT INTO public.profiles (user_id, full_name, email, user_role, auth_provider, created_at, updated_at)
+  -- Extract user information from metadata
+  user_email := COALESCE(NEW.email, '');
+  
+  -- Handle different OAuth providers
+  IF NEW.raw_app_meta_data->>'provider' = 'google' THEN
+    auth_provider := 'google';
+    user_full_name := COALESCE(
+      NEW.raw_user_meta_data->>'full_name',
+      NEW.raw_user_meta_data->>'name',
+      split_part(user_email, '@', 1)
+    );
+    avatar_url := COALESCE(
+      NEW.raw_user_meta_data->>'avatar_url',
+      NEW.raw_user_meta_data->>'picture'
+    );
+  ELSIF NEW.raw_app_meta_data->>'provider' = 'facebook' THEN
+    auth_provider := 'facebook';
+    user_full_name := COALESCE(
+      NEW.raw_user_meta_data->>'full_name',
+      NEW.raw_user_meta_data->>'name',
+      split_part(user_email, '@', 1)
+    );
+    avatar_url := COALESCE(
+      NEW.raw_user_meta_data->>'avatar_url',
+      NEW.raw_user_meta_data->>'picture'
+    );
+  ELSE
+    -- Default for email signup
+    auth_provider := 'email';
+    user_full_name := COALESCE(
+      NEW.raw_user_meta_data->>'full_name',
+      split_part(user_email, '@', 1)
+    );
+    avatar_url := NULL;
+  END IF;
+
+  -- Insert profile with proper data
+  INSERT INTO public.profiles (
+    user_id, 
+    full_name, 
+    email, 
+    user_role, 
+    auth_provider, 
+    avatar_url,
+    email_verified,
+    created_at, 
+    updated_at
+  )
   VALUES (
     NEW.id,
-    NEW.raw_user_meta_data->>'full_name',
-    NEW.email,
+    user_full_name,
+    user_email,
     'Buyer',
-    'email',
+    auth_provider,
+    avatar_url,
+    CASE WHEN auth_provider IN ('google', 'facebook') THEN true ELSE false END,
     NOW(),
     NOW()
   )
   ON CONFLICT (user_id) DO UPDATE SET
-    email = NEW.email,
+    email = EXCLUDED.email,
+    full_name = EXCLUDED.full_name,
+    auth_provider = EXCLUDED.auth_provider,
+    avatar_url = EXCLUDED.avatar_url,
+    email_verified = EXCLUDED.email_verified,
     updated_at = NOW();
+    
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

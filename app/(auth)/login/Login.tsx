@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -12,7 +12,7 @@ import {
   CardFooter,
   Checkbox,
 } from "@heroui/react";
-import { EyeIcon, MailIcon, LockIcon } from "lucide-react";
+import { EyeIcon, MailIcon, LockIcon, XCircle } from "lucide-react";
 import EyeSlashIcon from "@heroicons/react/24/outline/EyeSlashIcon";
 import GoogleSignInButton from "./GoogleSignInButtton";
 import FacebookSignInButton from "./FacebookLogin";
@@ -26,8 +26,22 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [isVisible, setIsVisible] = useState(false);
+  const [isFormValid, setIsFormValid] = useState(false);
   const router = useRouter();
   const { signIn } = useAuth();
+
+  // Memoized form validation
+  const validateForm = useCallback(() => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isEmailValid = emailRegex.test(email);
+    const isPasswordValid = password.length >= 6;
+    return isEmailValid && isPasswordValid;
+  }, [email, password]);
+
+  // Update form validity when inputs change
+  useEffect(() => {
+    setIsFormValid(validateForm());
+  }, [validateForm]);
 
   useEffect(() => {
     const resetStatus = searchParams?.get("reset");
@@ -37,7 +51,7 @@ const Login = () => {
     }
   }, [searchParams]);
 
-  const clearStoredCredentials = () => {
+  const clearStoredCredentials = useCallback(() => {
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("next-auth.session-token");
       sessionStorage.removeItem("next-auth.callback-url");
@@ -50,44 +64,141 @@ const Login = () => {
         }
       });
     }
-  };
+  }, []);
 
-  const toggleVisibility = () => setIsVisible(!isVisible);
+  const toggleVisibility = useCallback(
+    () => setIsVisible(!isVisible),
+    [isVisible]
+  );
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
-
-    try {
-      clearStoredCredentials();
-
-      const result = await signIn(email, password);
-
-      if (result?.error) {
-        setError(result.error.message || result.error);
-        setIsLoading(false);
-        return;
-      }
-
-      // With Supabase, user info comes from the auth context after successful sign in
-      // The auth context will automatically update with user/profile info
-
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("email", email);
-        localStorage.setItem("email", email);
-        document.cookie = `email=${email}; path=/`;
-      }
-
-      // ✅ Redirect will be handled by useEffect when auth context updates
-      // No immediate redirect needed here as auth context handles it
-    } catch (err) {
-      console.error("Login error:", err);
-      setError("An error occurred during login");
-    } finally {
-      setIsLoading(false);
+  // Function to format error messages
+  const formatErrorMessage = useCallback((errorMessage: string) => {
+    if (errorMessage.includes("Invalid login credentials")) {
+      return "Invalid email or password. Please check your credentials and try again.";
     }
-  };
+    if (errorMessage.includes("Email not confirmed")) {
+      return "Please verify your email address before signing in.";
+    }
+    if (errorMessage.includes("Too many requests")) {
+      return "Too many login attempts. Please wait a few minutes before trying again.";
+    }
+    if (errorMessage.includes("network")) {
+      return "Network error. Please check your connection and try again.";
+    }
+    if (errorMessage.includes("Invalid email")) {
+      return "Please enter a valid email address.";
+    }
+    return errorMessage;
+  }, []);
+
+  // Optimized form submission with debouncing
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+
+      if (!isFormValid || isLoading) return;
+
+      setIsLoading(true);
+      setError("");
+
+      try {
+        clearStoredCredentials();
+
+        const result = await signIn(email, password);
+
+        if (result?.error) {
+          const formattedError = formatErrorMessage(
+            result.error.message || result.error
+          );
+          setError(formattedError);
+          return;
+        }
+
+        // Store email for future use
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("email", email);
+          localStorage.setItem("email", email);
+          document.cookie = `email=${email}; path=/`;
+        }
+
+        // Success will be handled by auth context
+      } catch (err) {
+        console.error("Login error:", err);
+        setError("An error occurred during login");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [
+      email,
+      password,
+      signIn,
+      clearStoredCredentials,
+      isFormValid,
+      isLoading,
+      formatErrorMessage,
+    ]
+  );
+
+  // Memoized input handlers
+  const handleEmailChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setEmail(e.target.value);
+      setError(""); // Clear error when user starts typing
+    },
+    []
+  );
+
+  const handlePasswordChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setPassword(e.target.value);
+      setError(""); // Clear error when user starts typing
+    },
+    []
+  );
+
+  // Memoized component props
+  const emailInputProps = useMemo(
+    () => ({
+      type: "email",
+      label: "Email",
+      placeholder: "Enter your email",
+      value: email,
+      onChange: handleEmailChange,
+      startContent: <MailIcon className="w-4 h-4" />,
+      disabled: isLoading,
+      autoComplete: "email",
+    }),
+    [email, handleEmailChange, isLoading]
+  );
+
+  const passwordInputProps = useMemo(
+    () => ({
+      type: isVisible ? "text" : "password",
+      label: "Password",
+      placeholder: "Enter your password",
+      value: password,
+      onChange: handlePasswordChange,
+      startContent: <LockIcon className="w-4 h-4" />,
+      endContent: (
+        <button
+          className="focus:outline-none"
+          type="button"
+          onClick={toggleVisibility}
+          disabled={isLoading}
+        >
+          {isVisible ? (
+            <EyeSlashIcon className="w-4 h-4 text-default-400 pointer-events-none" />
+          ) : (
+            <EyeIcon className="w-4 h-4 text-default-400 pointer-events-none" />
+          )}
+        </button>
+      ),
+      disabled: isLoading,
+      autoComplete: "current-password",
+    }),
+    [password, handlePasswordChange, isVisible, toggleVisibility, isLoading]
+  );
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-primary/20 p-4">
@@ -98,87 +209,54 @@ const Login = () => {
           </div>
           <h2 className="text-xl font-semibold">Login</h2>
           <p className="text-gray-500 text-sm text-center">
-            Welcome back! Please enter your details
+            Welcome back! Please enter your details.
           </p>
         </CardHeader>
 
-        <CardBody className="pt-6">
-          {error && (
-            <div className="bg-red-50 text-red-600 border border-red-200 rounded px-4 py-3 text-sm mb-4">
-              <div className="flex items-center gap-2">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M12 9v5M12 17.01l.01-.011M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                {error}
-              </div>
-            </div>
-          )}
-
+        <CardBody className="pb-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1">
-              <label htmlFor="email" className="text-sm font-medium">
-                Email
-              </label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                startContent={<MailIcon className="text-gray-400 w-4 h-4" />}
-                className="w-full"
-                isRequired
-              />
-            </div>
+            <Input {...emailInputProps} />
+            <Input {...passwordInputProps} />
 
-            <div className="space-y-1">
-              <label htmlFor="password" className="text-sm font-medium">
-                Password
-              </label>
-              <Input
-                id="password"
-                type={isVisible ? "text" : "password"}
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                startContent={<LockIcon className="text-gray-400 w-4 h-4" />}
-                endContent={
-                  <button
-                    className="focus:outline-none"
-                    type="button"
-                    onClick={toggleVisibility}
-                  >
-                    {isVisible ? (
-                      <EyeSlashIcon className="text-gray-400 w-4 h-4" />
-                    ) : (
-                      <EyeIcon className="text-gray-400 w-4 h-4" />
-                    )}
-                  </button>
-                }
-                className="w-full"
-                isRequired
-              />
-            </div>
+            {/* Beautiful Error Display */}
+            {error && (
+              <div className="rounded-md bg-red-50 border border-red-200 p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <XCircle
+                      className="h-5 w-5 text-red-400"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800">
+                      {error.includes("Invalid email or password")
+                        ? "Login Failed"
+                        : "Login Error"}
+                    </h3>
+                    <div className="mt-2 text-sm text-red-700">
+                      <p>{error}</p>
+                      {error.includes("Email not confirmed") && (
+                        <div className="mt-3">
+                          <Link
+                            href="/signup"
+                            className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                          >
+                            Create New Account
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
-            <div className="flex justify-between items-center pt-2">
-              <Checkbox size="sm">
-                <span className="text-sm">Remember me</span>
-              </Checkbox>
+            <div className="flex items-center justify-between">
+              <Checkbox size="sm">Remember me</Checkbox>
               <Link
                 href="/forgot-password"
-                className="text-blue-600 text-sm hover:underline"
+                className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
               >
                 Forgot password?
               </Link>
@@ -187,26 +265,47 @@ const Login = () => {
             <Button
               type="submit"
               color="primary"
-              className="w-full mt-2"
+              className="w-full"
+              disabled={!isFormValid || isLoading}
               isLoading={isLoading}
             >
-              {isLoading ? "logging in..." : "Log in"}
+              {isLoading ? (
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Signing in...
+                </div>
+              ) : (
+                "Sign in"
+              )}
             </Button>
           </form>
+
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-gray-500">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <GoogleSignInButton />
+              <FacebookSignInButton />
+            </div>
+          </div>
         </CardBody>
 
-        <CardFooter className="pb-6 px-6 flex flex-col gap-4">
-          <p className="text-center text-sm text-gray-500">or continue with</p>
-          <div className="grid grid-cols-2 gap-3">
-            <GoogleSignInButton />
-            <FacebookSignInButton />
-          </div>
-          <div className="w-full text-center">
+        <CardFooter className="pt-0">
+          <div className="text-center w-full">
             <p className="text-sm text-gray-600">
               Don't have an account?{" "}
               <Link
                 href="/signup"
-                className="text-blue-600 font-medium hover:underline"
+                className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
               >
                 Sign up
               </Link>

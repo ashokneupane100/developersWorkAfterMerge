@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "shadcn": "npx @shadcn/ui"
+    "shadcn": "npx @shadcn/ui",
+    "analyze": "ANALYZE=true npm run build"
   },
   "dependencies": {
     "@changey/react-leaflet-markercluster": "^4.0.0-rc1",

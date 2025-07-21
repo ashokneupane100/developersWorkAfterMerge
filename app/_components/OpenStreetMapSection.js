@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import React, { useEffect, useState, useRef } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 const createCustomIcon = (phoneNumber) => {
   return L.divIcon({
-    className: 'custom-map-pin',
+    className: "custom-map-pin",
     html: `
       <div style="color: blue; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 60px; height: 80px; position: relative;">
         <svg 
@@ -40,16 +40,17 @@ const createCustomIcon = (phoneNumber) => {
 function OpenStreetMapSection({ coordinates, listing }) {
   const [map, setMap] = useState(null);
   const [dragEnabled, setDragEnabled] = useState(false);
+  const mapContainerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
 
   const containerStyle = {
-    width: '100%',
-     // Subtract header height
+    width: "100%",
     borderRadius: 1,
   };
 
   const enableDragOnDoubleClick = (mapInstance) => {
     mapInstance.doubleClickZoom.disable();
-    mapInstance.on('dblclick', () => {
+    mapInstance.on("dblclick", () => {
       if (!dragEnabled) {
         mapInstance.dragging.enable();
         setDragEnabled(true);
@@ -58,78 +59,107 @@ function OpenStreetMapSection({ coordinates, listing }) {
   };
 
   const showSingleTouchMessage = (mapInstance) => {
-    const dragMessage = L.DomUtil.create('div', 'map-drag-message');
-    dragMessage.textContent = 'Use + -- button to zoom, 2 fingers / double-click to move the map,Find Property in the Map.';
+    const dragMessage = L.DomUtil.create("div", "map-drag-message");
+    dragMessage.textContent =
+      "Use + -- button to zoom, 2 fingers / double-click to move the map,Find Property in the Map.";
 
     Object.assign(dragMessage.style, {
-      position: 'absolute',
-      top: '0px',
-      left: '3.1rem',
-      backgroundColor: 'darkBlue',
-      color: '#F3F4F6',
-      padding: '5px 5px',
-      borderRadius: '5px',
-      fontSize: '15px',
+      position: "absolute",
+      top: "0px",
+      left: "3.1rem",
+      backgroundColor: "darkBlue",
+      color: "#F3F4F6",
+      padding: "5px 5px",
+      borderRadius: "5px",
+      fontSize: "15px",
       zIndex: 1000,
       lineHeight: "1.5rem",
-      whiteSpace: 'normal',
+      whiteSpace: "normal",
       fontWeight: "bold",
-      width: '16rem',
-      display: 'block',
+      width: "16rem",
+      display: "block",
     });
 
-    const zoomControlContainer = mapInstance.getContainer().querySelector('.leaflet-control-zoom');
+    const zoomControlContainer = mapInstance
+      .getContainer()
+      .querySelector(".leaflet-control-zoom");
     if (zoomControlContainer) {
       zoomControlContainer.appendChild(dragMessage);
 
-      const zoomButtons = zoomControlContainer.querySelectorAll('a');
+      const zoomButtons = zoomControlContainer.querySelectorAll("a");
       zoomButtons.forEach((button) => {
         Object.assign(button.style, {
-          width: '50px',
-          height: '60px',
-          fontSize: '49px',
-          lineHeight: '60px',
+          width: "50px",
+          height: "60px",
+          fontSize: "49px",
+          lineHeight: "60px",
           left: "1px",
           top: "-1rem",
         });
       });
     }
 
-    mapInstance.on('touchstart', (e) => {
+    mapInstance.on("touchstart", (e) => {
       if (e.touches.length === 1) {
-        dragMessage.style.display = 'block';
+        dragMessage.style.display = "block";
         mapInstance.dragging.disable();
       } else if (e.touches.length === 2) {
-        dragMessage.style.display = 'none';
+        dragMessage.style.display = "none";
         mapInstance.dragging.enable();
       }
     });
 
-    mapInstance.on('touchend', () => {
+    mapInstance.on("touchend", () => {
       mapInstance.dragging.disable();
     });
   };
 
   useEffect(() => {
-    // Initialize map
-    const mapInstance = L.map('map', {
+    // Clear any existing map
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.remove();
+      mapInstanceRef.current = null;
+    }
+
+    // Wait for container to be available
+    if (!mapContainerRef.current) return;
+
+    // Initialize map with cache-busting
+    const timestamp = Date.now();
+    const mapInstance = L.map(mapContainerRef.current, {
       center: [27.6931, 85.2807], // Default center
       zoom: 12,
       dragging: false,
       doubleClickZoom: true,
       scrollWheelZoom: false,
+      // Add cache-busting options
+      updateWhenIdle: true,
+      updateWhenZooming: false,
     });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '©Contribute to OpenStreetMap, ',
+    // Add tile layer with cache-busting parameters
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "©Contribute to OpenStreetMap, ",
+      // Add cache-busting parameters
+      version: timestamp,
+      maxZoom: 19,
+      subdomains: "abc",
+      // Prevent caching
+      noWrap: false,
+      bounds: null,
     }).addTo(mapInstance);
 
     enableDragOnDoubleClick(mapInstance);
     showSingleTouchMessage(mapInstance);
+
+    mapInstanceRef.current = mapInstance;
     setMap(mapInstance);
 
     return () => {
-      mapInstance.remove();
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
     };
   }, []);
 
@@ -144,20 +174,22 @@ function OpenStreetMapSection({ coordinates, listing }) {
       if (item.coordinates && item.coordinates.lat && item.coordinates.lng) {
         const { lat, lng } = item.coordinates;
         coordinatePoints.push([lat, lng]);
-        
+
         // Add marker
         const marker = L.marker([lat, lng], {
-          icon: createCustomIcon(item.phoneNumber || '+9779851331644'),
+          icon: createCustomIcon(item.phoneNumber || "+9779851331644"),
         }).addTo(map);
 
         marker.bindPopup(`
           <div>
-            <h3>${item.title || 'Location'}</h3>
-            <p>${item.address || 'No address provided'}</p>
+            <h3>${item.title || "Location"}</h3>
+            <p>${item.address || "No address provided"}</p>
             <div 
               style="background-color: #4CAF50; padding: 5px 10px; color: white; border-radius: 5px; text-align: center; cursor: pointer;"
-              onclick="window.location.href = 'tel:${item.phoneNumber || '+9779851331644'}'">
-              Call: ${item.phoneNumber || '+9779851331644'}
+              onclick="window.location.href = 'tel:${
+                item.phoneNumber || "+9779851331644"
+              }'">
+              Call: ${item.phoneNumber || "+9779851331644"}
             </div>
           </div>
         `);
@@ -176,14 +208,14 @@ function OpenStreetMapSection({ coordinates, listing }) {
         const bounds = L.latLngBounds(coordinatePoints);
         map.fitBounds(bounds, {
           padding: [50, 50],
-          maxZoom: 12
+          maxZoom: 12,
         });
       }
     }
 
     // Cleanup function to remove markers
     return () => {
-      markers.forEach(marker => map.removeLayer(marker));
+      markers.forEach((marker) => map.removeLayer(marker));
     };
   }, [map, listing]);
 
@@ -192,11 +224,15 @@ function OpenStreetMapSection({ coordinates, listing }) {
       <h3 className="text-center text-white bg-blue-950 text-xl md:text-2xl p-2">
         Locate Property on Map & Call Directly
       </h3>
-      <div className="flex-1 overflow-hidden relative" id="map" style={{
-        width: '100%',
-        height: 'calc(100% - 48px)', // Subtract header height
-        borderRadius: '1px'
-      }}></div>
+      <div
+        ref={mapContainerRef}
+        className="flex-1 overflow-hidden relative"
+        style={{
+          width: "100%",
+          height: "calc(100% - 48px)", // Subtract header height
+          borderRadius: "1px",
+        }}
+      ></div>
     </div>
   );
 }

@@ -2,14 +2,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { verifyOTP } from "@/lib/otp";
-import { createAdminClient } from "@/utils/supabase/admin";
-
-const supabaseAdmin = createAdminClient();
 
 export async function POST(request) {
   try {
     const { email, code } = await request.json();
-    console.log("Verifying OTP for email:", email);
+    const supabase = await createClient();
 
     if (!email || !code) {
       return NextResponse.json(
@@ -18,75 +15,68 @@ export async function POST(request) {
       );
     }
 
-    // Verify the OTP using our custom verification system
-    const verification = await verifyOTP(email, code);
-    
-    if (!verification.success) {
-      console.error("OTP verification failed:", verification.message);
+    console.log("Verifying OTP for email:", email);
+
+    // Verify the OTP
+    const verificationResult = await verifyOTP(email, code);
+
+    if (!verificationResult.success) {
       return NextResponse.json(
-        { success: false, message: verification.message },
+        { success: false, message: verificationResult.message },
         { status: 400 }
       );
     }
 
-    console.log("OTP verification successful, updating user status");
+    console.log("OTP verified successfully for:", email);
 
-    // If OTP verification is successful, mark the user's email as verified in Supabase
-    const supabase = createClient();
-    
-    // First, get the user ID from profiles table
-    const { data: userData, error: userError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('email', email)
+    // Get the user from profiles table using the user_id from OTP
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("user_id", verificationResult.userId)
       .single();
-    
-    if (userError) {
-      console.error("User lookup error:", userError);
+
+    if (profileError || !profileData) {
+      console.error("Error getting profile:", profileError);
       return NextResponse.json(
-        { success: false, message: "User not found" },
+        { success: false, message: "User profile not found" },
         { status: 404 }
       );
     }
-    
-    // Update the email_verified flag in the profiles table
+
+    // Update profile to mark email as verified
     const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ email_verified: true })
-      .eq('id', userData.id);
-    
+      .from("profiles")
+      .update({
+        email_verified: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", verificationResult.userId);
+
     if (updateError) {
-      console.error("Profile update error:", updateError);
+      console.error("Error updating profile:", updateError);
       return NextResponse.json(
-        { success: false, message: "Failed to verify email" },
+        { success: false, message: "Failed to update profile" },
         { status: 500 }
       );
     }
 
-    // Also update Supabase Auth user metadata (optional but recommended)
-    const { error: authUpdateError } = await supabaseAdmin.auth.admin.updateUserById(
-      userData.id,
-      { email_verified: true }
-    );
+    console.log("Email verification completed successfully for:", email);
 
-    if (authUpdateError) {
-      console.error("Auth update error:", authUpdateError);
-      // We'll continue since the profiles table was updated successfully
-    }
-
-    console.log("User email verification status updated successfully");
     return NextResponse.json({
       success: true,
-      message: "Email verified successfully. You can now log in.",
-      redirectTo: "/login"
+      message: "Email verified successfully! You can now sign in.",
+      userId: verificationResult.userId,
+      email: email,
+      redirectToLogin: true,
     });
   } catch (error) {
-    console.error("Error in verify-otp API:", error);
+    console.error("OTP verification error:", error);
     return NextResponse.json(
-      { 
-        success: false, 
-        message: "Server error", 
-        details: error instanceof Error ? error.message : JSON.stringify(error)
+      {
+        success: false,
+        message: "Internal server error",
+        details: error instanceof Error ? error.message : JSON.stringify(error),
       },
       { status: 500 }
     );

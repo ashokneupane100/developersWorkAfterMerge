@@ -6,7 +6,7 @@ import { sendOTPEmail } from "@/lib/mail";
 
 export async function POST(request) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { firstName, lastName, email, password } = await request.json();
 
     // Comprehensive input validation
@@ -46,9 +46,7 @@ export async function POST(request) {
       );
     }
 
-    // Skip the existing user check to avoid RLS recursion
-    // The Supabase auth.signUp will handle duplicate email checking
-    console.log("Proceeding with signup for email:", email);
+    console.log("Starting signup process for email:", email);
 
     // Signup with Supabase but disable their email verification
     const { data, error } = await supabase.auth.signUp({
@@ -78,84 +76,64 @@ export async function POST(request) {
       );
     }
 
-    // Create profile using service role to bypass RLS
-    if (data.user) {
-      const supabaseAdmin = createClient();
-
-      const { error: profileError } = await supabaseAdmin
-        .from("profiles")
-        .insert({
-          id: data.user.id,
-          user_id: data.user.id,
-          full_name: `${firstName} ${lastName}`,
-          email: email,
-          avatar_url: null,
-          email_verified: false,
-          user_role: "Buyer", // Default role for new users
-          auth_provider: "email",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-
-      if (profileError) {
-        console.error("Profile creation error:", profileError);
-
-        // If profile already exists, that's okay for signup
-        if (profileError.code === "23505") {
-          console.log("Profile already exists, continuing...");
-        } else {
-          return NextResponse.json(
-            {
-              success: false,
-              message: "Error creating user profile",
-              details: JSON.stringify(profileError),
-            },
-            { status: 500 }
-          );
-        }
-      }
-
-      // Generate and store OTP
-      const otp = generateOTP();
-      console.log("Generated OTP:", otp);
-
-      const stored = await storeOTP(email, otp);
-
-      if (!stored.success) {
-        console.error("OTP storage failed:", stored.error);
-        return NextResponse.json(
-          {
-            success: false,
-            message: "Failed to generate verification code",
-            details: stored.error,
-          },
-          { status: 500 }
-        );
-      }
-
-      // Send OTP via email
-      const sent = await sendOTPEmail(email, otp, `${firstName} ${lastName}`);
-
-      if (!sent.success) {
-        console.error("Email sending failed with error:", sent.error);
-        return NextResponse.json(
-          {
-            success: false,
-            message: "Failed to send verification email",
-            details:
-              sent.error instanceof Error
-                ? sent.error.message
-                : JSON.stringify(sent.error),
-          },
-          { status: 500 }
-        );
-      }
+    if (!data.user) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Failed to create user account",
+        },
+        { status: 500 }
+      );
     }
+
+    console.log("User created successfully:", data.user.id);
+
+    // Wait a moment for the trigger to create the profile
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // Generate and store OTP with the user ID
+    const otp = generateOTP();
+    console.log("Generated OTP:", otp);
+
+    // Store OTP with user ID directly
+    const otpResult = await storeOTPWithUserId(email, otp, data.user.id);
+
+    if (!otpResult.success) {
+      console.error("OTP storage failed:", otpResult.error);
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Failed to generate verification code",
+          details: otpResult.error,
+        },
+        { status: 500 }
+      );
+    }
+
+    // Send OTP via email
+    const sent = await sendOTPEmail(email, otp, `${firstName} ${lastName}`);
+
+    if (!sent.success) {
+      console.error("Email sending failed with error:", sent.error);
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Failed to send verification email",
+          details:
+            sent.error instanceof Error
+              ? sent.error.message
+              : JSON.stringify(sent.error),
+        },
+        { status: 500 }
+      );
+    }
+
+    console.log("Signup completed successfully for:", email);
 
     return NextResponse.json({
       success: true,
       message: "Account created. Verification code sent to your email.",
-      userId: data.user?.id,
+      userId: data.user.id,
       email: email,
       redirectToVerification: true,
     });
@@ -169,5 +147,63 @@ export async function POST(request) {
       },
       { status: 500 }
     );
+  }
+}
+
+// Helper function to store OTP with user ID
+async function storeOTPWithUserId(email, otp, userId) {
+  try {
+    const normalizedEmail = email.toLowerCase().trim();
+    const supabase = await createClient();
+
+    // Calculate expiration time (10 minutes from now)
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 10);
+
+    // First check if we already have an OTP for this email
+    const { data: existingOTP } = await supabase
+      .from("verification_codes")
+      .select("*")
+      .eq("email", normalizedEmail)
+      .single();
+
+    if (existingOTP) {
+      // Update existing OTP
+      const { error } = await supabase
+        .from("verification_codes")
+        .update({
+          code: otp,
+          expires_at: expiresAt.toISOString(),
+          verified: false,
+          attempts: 0,
+          user_id: userId,
+        })
+        .eq("email", normalizedEmail);
+
+      if (error) {
+        console.error("Error updating OTP:", error);
+        return { success: false, error };
+      }
+    } else {
+      // Create new OTP record
+      const { error } = await supabase.from("verification_codes").insert({
+        email: normalizedEmail,
+        code: otp,
+        expires_at: expiresAt.toISOString(),
+        verified: false,
+        attempts: 0,
+        user_id: userId,
+      });
+
+      if (error) {
+        console.error("Error storing OTP:", error);
+        return { success: false, error };
+      }
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("OTP storage error:", error);
+    return { success: false, error };
   }
 }
