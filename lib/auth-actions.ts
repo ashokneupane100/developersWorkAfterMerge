@@ -12,7 +12,7 @@ function handleAuthError(error: any, redirectTo: string = "/error") {
 
 // Login with email and password
 export async function login(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Validate inputs
   const email = formData.get("email") as string;
@@ -34,7 +34,7 @@ export async function login(formData: FormData) {
 
 // Signup with email and password
 export async function signup(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Validate inputs
   const firstName = formData.get("first-name") as string;
@@ -68,7 +68,7 @@ export async function signup(formData: FormData) {
 
 // Logout the user
 export async function signout() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { error } = await supabase.auth.signOut();
   if (error) {
@@ -81,7 +81,7 @@ export async function signout() {
 
 // Sign in with Google
 export async function signInWithGoogle() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
@@ -106,7 +106,7 @@ export async function signInWithGoogle() {
 
 // Sign in with Apple
 export async function signInWithApple() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const redirectTo =
     process.env.NODE_ENV === "production"
@@ -133,7 +133,7 @@ export async function signInWithApple() {
 
 // Sign in with Facebook
 export async function signInWithFacebook() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const redirectTo =
     process.env.NODE_ENV === "production"
@@ -161,14 +161,15 @@ export async function signInWithFacebook() {
 }
 
 export async function signInWithX() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "twitter", // Twitter is still the actual provider name used in Supabase
     options: {
-      redirectTo: process.env.NODE_ENV === "production"
-        ? "https://onlinehome.com.np"
-        : "http://localhost:3000",
+      redirectTo:
+        process.env.NODE_ENV === "production"
+          ? "https://onlinehome.com.np"
+          : "http://localhost:3000",
     },
   });
 
