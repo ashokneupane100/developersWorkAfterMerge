@@ -12,7 +12,7 @@ import {
   BuildingOfficeIcon
 } from '@heroicons/react/24/outline';
 import { FiPhoneCall } from 'react-icons/fi';
-import { Button } from "@heroui/react";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext"
 import logo from "../../public/assets/images/homeLogo.png";
 
@@ -147,21 +147,21 @@ const Header = memo(function Header() {
       `}</style>
       <div className="bg-white fixed top-0 w-full z-[1000] border-b shadow-sm">
         {/* Desktop View */}
-        <div className="hidden md:flex px-4 lg:px-8 py-4 items-center justify-between max-w-7xl mx-auto">
+        <div className="hidden md:flex px-4 lg:px-10 py-4 items-center justify-between max-w-7xl mx-auto">
           {/* Logo */}
           <Link href="/" prefetch={false}>
-          <div className="flex items-center">
+          <div className="flex items-center gap-2 group">
                 <Image
                   src={logo}
-                  width={50}
-                  height={50}
+                  width={40}
+                  height={40}
                   alt="logo"
                   priority
-                  className="object-contain w-50 h-50"
+                  className="object-contain w-10 h-10 drop-shadow-md group-hover:scale-105 transition-transform duration-200"
                 />
-                <h1 className="ml-2 font-bold text-green-800 text-lg leading-tight text-center pt-1">
+                <h1 className="ml-2 font-extrabold text-green-800 text-xl leading-tight text-center pt-1 tracking-tight">
                   onlinehome
-                  <span className="block text-xs text-green-700">
+                  <span className="block text-xs text-green-700 font-medium tracking-wide">
                   बर्षौं बर्षको बलियो सम्बन्ध
                   </span>
                 </h1>
@@ -173,7 +173,7 @@ const Header = memo(function Header() {
             {/* All Properties Button */}
             <Link href="/all-properties" prefetch={false}>
               <Button 
-                className="bg-green-600 border rounded-md hover:bg-green-700 text-white transition-colors duration-300 flex items-center gap-2"
+                className="bg-green-600 border rounded-lg hover:bg-green-700 text-white transition-colors duration-200 flex items-center gap-2 shadow-sm font-semibold px-4 py-2"
               >
                 <BuildingOfficeIcon className="w-4 h-4" />
                 <span>All Properties</span>
@@ -182,7 +182,7 @@ const Header = memo(function Header() {
             
             <Link href="/request-property" prefetch={false}>
               <Button 
-                className="bg-white border rounded-md border-green-600 hover:bg-green-700 text-green-700 hover:text-white transition-colors duration-300 flex items-center gap-2"
+                className="bg-white border rounded-lg border-green-600 hover:bg-green-700 text-green-700 hover:text-white transition-colors duration-200 flex items-center gap-2 shadow-sm font-semibold px-4 py-2"
               >
                 <PlusIcon className="w-4 h-4" />
                 <span>Request Property</span>
@@ -190,7 +190,7 @@ const Header = memo(function Header() {
             </Link>
             <Link href="/add-new-listing" prefetch={false}>
               <Button 
-                className="bg-green-600 rounded-md hover:bg-green-700 text-white flex items-center gap-2"
+                className="bg-green-800 rounded-lg hover:bg-green-700 text-white flex items-center gap-2 shadow-sm font-semibold px-4 py-2"
               >
                 <PlusIcon className="w-4 h-4" />
                 <span>Post Property</span>
@@ -200,6 +200,7 @@ const Header = memo(function Header() {
             <button 
               className={buttonClass} 
               onClick={() => window.location.href='tel:+9779851331644'}
+              style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}
             >
               <FiPhoneCall className="w-4 h-4" />
               <span>9851331644</span>
@@ -261,7 +262,7 @@ const Header = memo(function Header() {
                   </Button>
                 </Link>
                 <Link href="/signup" prefetch={false}>
-                  <Button className="border border-green-600 hover:bg-green-700 text-green-600 hover:text-white">
+                  <Button className="border border-green-600 hover:bg-green-700 text-white hover:text-white">
                     Signup
                   </Button>
                 </Link>
@@ -273,20 +274,20 @@ const Header = memo(function Header() {
         {/* Mobile Header - similar changes */}
         <div className="md:hidden flex flex-col">
           {/* Logo and Auth Row */}
-          <div className="flex justify-between items-center px-4 py-3 border-b">
+          <div className="flex justify-between items-center px-4 py-2 border-b shadow-sm">
             <Link href="/" prefetch={false}>
-              <div className="flex items-center">
+              <div className="flex items-center gap-0 group">
                 <Image
                   src={logo}
-                  width={50}
-                  height={50}
+                  width={28}
+                  height={28}
                   alt="logo"
                   priority
-                  className="object-contain w-50 h-50"
+                  className="object-contain w-7 h-7 drop-shadow-md group-hover:scale-105 transition-transform duration-200"
                 />
-                <h1 className="ml-2 font-bold text-green-800 text-lg leading-tight text-center pt-1">
+                <h1 className="ml-1 font-extrabold text-green-800 text-lg leading-tight text-center pt-1 pb-0.5 tracking-tight">
                   onlinehome
-                  <span className="block text-xs text-green-700">
+                  <span className="block text-xs text-green-700 font-medium tracking-wide mt-[-2px]">
                   बर्षौं बर्षको बलियो सम्बन्ध
                   </span>
                 </h1>
@@ -350,13 +351,16 @@ const Header = memo(function Header() {
             ) : (
               <div className="flex gap-2">
                 <Link href="/login" prefetch={false}>
-                  <Button className="bg-green-600 hover:bg-green-700 text-white" size="sm">
-                    Login
+                  <Button className="bg-green-600 hover:bg-green-700 text-white py-0.5 px-1.5" size="sm">
+                    <span className="text-xl font-semibold">Login</span>
                   </Button>
                 </Link>
                 <Link href="/signup" prefetch={false}>
-                  <Button className="border border-green-600 hover:bg-green-700 text-green-600 hover:text-white" size="sm">
-                    Signup
+                  <Button
+                    className="bg-white border border-green-600 text-green-700 hover:bg-green-700 hover:text-white rounded-lg shadow-sm py-0.5 px-1.5 transition-colors duration-200 outline-green-600 outline-1 outline-double focus:ring-2 focus:ring-green-300"
+                    size="sm"
+                  >
+                    <span className="text-xl font-semibold tracking-wide">Signup</span>
                   </Button>
                 </Link>
               </div>
@@ -364,9 +368,9 @@ const Header = memo(function Header() {
           </div>
 
           {/* Action Buttons Row - Updated for Mobile */}
-          <div className="grid grid-cols-3 gap-2 p-2">
+          <div className="grid grid-cols-2 gap-2 p-2">
             {/* Request Property Button for Mobile */}
-            <Link href="/request-property" prefetch={false} className="w-full">
+            {/* <Link href="/request-property" prefetch={false} className="w-full">
               <Button 
                 className="bg-blue-700 border border-green-600 hover:bg-green-700 text-white hover:text-white w-full flex items-center justify-center gap-1 py-1 px-2"
                 size="sm"
@@ -374,26 +378,26 @@ const Header = memo(function Header() {
                 <PlusIcon className="w-4 h-4" />
                 <span className="text-sm font-medium">Request Property</span>
               </Button>
-            </Link>
+            </Link> */}
             
             <Link href="/add-new-listing" prefetch={false} className="w-full">
               <Button 
-                className="bg-green-600 hover:bg-green-700 text-white w-full flex items-center justify-center gap-1 py-1 px-2"
+                className="bg-green-800 hover:bg-green-700 text-white w-full flex items-center justify-center gap-1 py-0.5 px-1.5 rounded-lg shadow-sm font-semibold transition-colors duration-200"
                 size="sm"
               >
                 <PlusIcon className="w-4 h-4" />
-                <span className="text-sm font-medium">Post Property</span>
+                <span className="text-xl font-semibold">Post Property</span>
               </Button>
             </Link>
             
             <Button 
               variant="outline" 
-              className={`${buttonClass} py-1 px-2`}
+              className={`${buttonClass} py-0.5 px-1.5 rounded-lg shadow-sm font-semibold transition-colors duration-200`}
               size="sm"
               onClick={() => window.location.href='tel:+9779851331644'}
             >
               <PhoneIcon className="w-4 h-4"  />
-              <span className="text-sm font-medium">9851331644</span>
+              <span className="text-xl font-semibold">9851331644</span>
             </Button>
           </div>
         </div>
