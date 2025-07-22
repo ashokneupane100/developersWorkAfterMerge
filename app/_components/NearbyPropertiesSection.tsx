@@ -169,6 +169,7 @@ const NearbyPropertiesSection = () => {
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="p-4 border-b border-gray-200 bg-gray-50">
           <div className="flex items-center justify-between">
+            {/*
             <div className="flex items-center gap-2">
               <MapPinIcon className="h-5 w-5 text-blue-600" />
               <h2 className="text-lg font-medium text-gray-900">
@@ -176,6 +177,7 @@ const NearbyPropertiesSection = () => {
               </h2>
               <span className="text-sm text-gray-600">(within 3km radius)</span>
             </div>
+            */}
             {profile?.full_address && (
               <span className="text-sm text-blue-600 font-medium">
                 📍 {profile.full_address}

@@ -5,7 +5,7 @@ import { supabase } from "@/utils/supabase/client";
 import { toast } from "sonner";
 import OpenStreetMapSection from "./OpenStreetMapSection";
 import LoanCalculator from "@/components/helpers/loanCalculator";
-import NearbyPropertiesSection from "./NearbyPropertiesSection";
+// import NearbyPropertiesSection from "./NearbyPropertiesSection";
 import Link from "next/link";
 import {
   MapIcon,
@@ -271,7 +271,9 @@ function ListingMapView({
       </div>
 
       {/* Nearby Properties Section */}
-      <NearbyPropertiesSection />
+      {/* <NearbyPropertiesSection /> */}
+
+      
 
       {/* Map and Calculator Section */}
       <div className="max-w-6xl mx-auto w-full px-4 mb-8">
