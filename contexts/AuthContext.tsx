@@ -21,6 +21,11 @@ interface Profile {
   email_verified: boolean;
   user_role: string;
   auth_provider: string;
+  latitude?: number;
+  longitude?: number;
+  location_updated_at?: string;
+  location_permission?: boolean;
+  full_address?: string;
   created_at: string;
   updated_at: string;
 }

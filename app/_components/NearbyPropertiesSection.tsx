@@ -14,7 +14,7 @@ import {
 
 const NearbyPropertiesSection = () => {
   const { user, profile } = useAuth();
-  const [nearbyListings, setNearbyListings] = useState([]);
+  const [nearbyListings, setNearbyListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [locationPermission, setLocationPermission] = useState(false);
 
