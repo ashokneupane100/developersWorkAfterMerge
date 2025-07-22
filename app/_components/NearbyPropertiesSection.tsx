@@ -18,7 +18,12 @@ const NearbyPropertiesSection = () => {
   const [loading, setLoading] = useState(false);
   const [locationPermission, setLocationPermission] = useState(false);
 
-  const getDistanceFromLatLonInKm = (lat1, lon1, lat2, lon2) => {
+  const getDistanceFromLatLonInKm = (
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number
+  ) => {
     const R = 6371;
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
     const dLon = ((lon2 - lon1) * Math.PI) / 180;
@@ -69,7 +74,7 @@ const NearbyPropertiesSection = () => {
     );
   };
 
-  const fetchNearbyListings = async (userLat, userLng) => {
+  const fetchNearbyListings = async (userLat: number, userLng: number) => {
     setLoading(true);
     try {
       const { data: listings } = await supabase.from("listing").select("*");
