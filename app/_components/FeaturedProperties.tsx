@@ -27,6 +27,7 @@ type ListingType = {
   area?: string;
   action?: string;
   listingImages?: { url: string; listing_id: string }[];
+  description?: string;
 };
 
 const FeaturedProperties: React.FC = () => {
@@ -79,12 +80,12 @@ const FeaturedProperties: React.FC = () => {
                 className="relative group bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100"
               >
                 <Link href={`/view-listing/${item.id}`} className="block">
-                  <div className="relative aspect-[16/9] w-full overflow-hidden">
+                  <div className="relative aspect-[16/9] w-full overflow-hidden cursor-pointer">
                     <Image
                       src={item.listingImages?.[0]?.url || "/default-image.jpg"}
                       fill
                       sizes="100vw"
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="object-cover group-hover:scale-105 transition-transform duration-500 cursor-pointer"
                       alt={`${item.propertyType} in ${propertyLocation}`}
                     />
                     <div className="absolute top-2 left-2 px-2 py-1 rounded bg-orange-500 text-white text-sm font-medium">
@@ -97,7 +98,9 @@ const FeaturedProperties: React.FC = () => {
                     </div>
                     <div
                       className={`absolute top-4 left-20 px-4 py-1 rounded text-white text-base font-medium ${
-                        item.isFeatured === "true" ? "bg-orange-500" : "bg-red-500"
+                        item.isFeatured === "true"
+                          ? "bg-orange-500"
+                          : "bg-red-500"
                       }`}
                     >
                       {item.isFeatured === "true" ? "Hot" : "Featured"}
@@ -105,12 +108,24 @@ const FeaturedProperties: React.FC = () => {
                   </div>
                   <div className="p-4">
                     <h2 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">
-                      {item?.post_title || item?.propertyType || "Property Title"}
+                      {item?.post_title ||
+                        item?.propertyType ||
+                        "Property Title"}
                     </h2>
+                    {/* Description */}
+                    <p className="text-gray-700 text-sm mb-1 line-clamp-1">
+                      {item?.description ||
+                        "A beautiful property with all the amenities you need."}
+                    </p>
+                    <p className="text-blue-600 text-xs font-medium mb-2">
+                      Click for details...
+                    </p>
                     <div className="flex items-center text-gray-600 mb-3">
                       <MapPinIcon className="h-4 w-4 mr-1" />
                       <span className="text-sm line-clamp-1">
-                        {item?.full_address || item?.address || propertyLocation}
+                        {item?.full_address ||
+                          item?.address ||
+                          propertyLocation}
                       </span>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-sm">

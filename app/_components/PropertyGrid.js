@@ -20,12 +20,12 @@ const PropertyCard = ({ item, toggleFavorite, favorites }) => {
   return (
     <div className="relative group bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100">
       {/* Image Container */}
-      <div className="relative aspect-[16/9] w-full">
+      <div className="relative aspect-[16/9] w-full cursor-pointer">
         <Image
           src={imageUrl}
           alt={item.title || "Property"}
           fill
-          className="object-cover group-hover:scale-105 transition-transform duration-300"
+          className="object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           onError={(e) => {
             e.target.src = "/assets/images/placeholder-property.jpg";
@@ -63,11 +63,20 @@ const PropertyCard = ({ item, toggleFavorite, favorites }) => {
       </div>
 
       {/* Content */}
-      <Link href={`/view-listing/${item.id}`}>
+      <Link href={`/view-listing/${item.id}`} className="block">
         <div className="p-4">
           <h3 className="font-semibold text-lg mb-2 text-gray-900 line-clamp-2">
-            {item.title || `${item.propertyType} in ${location}`}
+            {item.title || item.post_title || "Property Title"}
           </h3>
+
+          {/* Description */}
+          <p className="text-gray-700 text-sm mb-1 line-clamp-1">
+            {item.description ||
+              "A beautiful property with all the amenities you need."}
+          </p>
+          <p className="text-blue-600 text-xs font-medium mb-2">
+            Click for details...
+          </p>
 
           <div className="flex items-center text-gray-600 mb-3">
             <MapPin className="h-4 w-4 mr-1" />

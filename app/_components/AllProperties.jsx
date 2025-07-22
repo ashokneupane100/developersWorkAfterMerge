@@ -192,14 +192,14 @@ const PropertyCard = ({ item, toggleFavorite, favorites }) => {
     <div className="relative group bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100">
       <Link href={`/view-listing/${item.id}`} className="block">
         {/* Image Container */}
-        <div className="relative aspect-[16/9] w-full overflow-hidden">
+        <div className="relative aspect-[16/9] w-full overflow-hidden cursor-pointer">
           <Image
             src={item.listingImages?.[0]?.url || "/default-image.jpg"}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             priority
             quality={90}
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            className="object-cover group-hover:scale-105 transition-transform duration-500 cursor-pointer"
             alt={`${item.propertyType || "Property"} in ${propertyLocation}`}
           />
 
@@ -229,8 +229,14 @@ const PropertyCard = ({ item, toggleFavorite, favorites }) => {
         <div className="p-4">
           {/* Title */}
           <h2 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">
-            {item?.post_title || item?.propertyType || "Property Title"}
+            {item?.post_title || "Property Title"}
           </h2>
+
+          {/* Description */}
+          <p className="text-gray-700 text-sm mb-1 line-clamp-1">
+            {item?.description || "A beautiful property with all the amenities you need."}
+          </p>
+          <p className="text-blue-600 text-xs font-medium mb-2">Click for details...</p>
 
           {/* Location */}
           <div className="flex items-center text-gray-600 mb-3">
