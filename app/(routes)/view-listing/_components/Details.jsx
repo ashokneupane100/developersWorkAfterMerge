@@ -13,9 +13,11 @@ import {
   MapPin,
   Phone,
   ExternalLink,
-  Check
+  Check,
+  PlayCircle
 } from 'lucide-react';
 import AgentDetail from './AgentDetail';
+// import VideoSection from './VideoSection'; // No longer needed for direct embed
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import Head from 'next/head';
@@ -25,7 +27,7 @@ const FB_APP_ID = '1112654223121169';
 function Details({ listingDetail }) {
   if (!listingDetail) {
     return (
-      <div className="min-h-screen bg-gray-50 animate-pulse p-1 lg:p-4">
+      <div className="min-h-screen bg-gray-50 animate-pulse p-4">
         <div className="max-w-7xl mx-auto space-y-4">
           <div className="h-12 bg-gray-200 rounded w-1/3"></div>
           <div className="h-8 bg-gray-200 rounded w-1/2"></div>
@@ -120,70 +122,99 @@ function Details({ listingDetail }) {
         <meta property="fb:app_id" content={FB_APP_ID} />
       </Head>
 
-      <div className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-white py-3 px-0 sm:px-2 lg:px-3">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-1 md:p-2 mb-2">
-            <div className="flex flex-col sm:flex-row items-start gap-2">
-              <div className="flex-grow">
-                <h2 className="text-xl sm:text-xl font-bold text-gray-800 mb-2">
-                  {listingDetail.post_title}
-                </h2>
-        
-                <div className="flex items-center gap-2 text-gray-600">
-                  <MapPin size={20} className="text-green-600" />
-                  <span>{listingDetail.address}</span>
-                </div>
+      <div className="w-full">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 sm:p-4 mb-3 sm:mb-4">
+          <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-3">
+            <div className="flex-grow">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
+                {listingDetail.post_title}
+              </h2>
+              <div className="flex items-center gap-2 text-gray-600 text-sm">
+                <MapPin size={16} className="text-green-600" />
+                <span>{listingDetail.address}</span>
               </div>
-
-              <div className="flex items-end justify-end w-full sm:w-auto">
-                {[
-                  { platform: 'facebook', color: 'bg-blue-600 hover:bg-blue-700', text: 'Facebook Share' },
-                  { platform: 'x', color: 'bg-black hover:bg-gray-800', text: 'Share on X' },
-                  { platform: 'linkedin', color: 'bg-blue-900 hover:bg-blue-800', text: 'LinkedIn Share' }
-                ].map((social, index) => (
-                  <Button 
-                    key={index}
-                    className={`${social.color} text-white rounded-md p-1 ml-1 mr-1 sm:p-2`}
-                    onClick={() => handleShare(social.platform)}
-                  >
-                    {social.text}
-                  </Button>
-                ))}
-              </div>
-
-              
+            </div>
+            <div className="flex items-end justify-end w-full sm:w-auto flex-wrap gap-2">
+              {[{ platform: 'facebook', color: 'bg-blue-600 hover:bg-blue-700', text: 'Facebook Share' },{ platform: 'x', color: 'bg-black hover:bg-gray-800', text: 'Share on X' },{ platform: 'linkedin', color: 'bg-blue-900 hover:bg-blue-800', text: 'LinkedIn Share' }].map((social, index) => (
+                <Button 
+                  key={index}
+                  className={`${social.color} text-white rounded px-3 py-2 text-sm w-full sm:w-auto`}
+                  onClick={() => handleShare(social.platform)}
+                >
+                  {social.text}
+                </Button>
+              ))}
             </div>
           </div>
+        </div>
 
-          {/* Features */}
-          <div className="grid grid-cols-3 lg:grid-cols-5 gap-1 mb-1">
-            {features.map((feature, idx) => (
-              <div key={idx} className="bg-white rounded-lg shadow-md text-center">
-                <div className="p-1 bg-green-50 rounded-full inline-block mb-0">
-                  {React.cloneElement(feature.icon, { size: 20, className: "text-green-600" })}
-                </div>
-                <p className="text-xs text-gray-500 mb-1">{feature.label}</p>
-                <p className="font-medium text-gray-900">{feature.value}</p>
+        {/* Features */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 mb-3 sm:mb-4">
+          {features.map((feature, idx) => (
+            <div key={idx} className="bg-white rounded-lg shadow-sm text-center p-2 sm:p-3 border border-gray-200 flex flex-col items-center">
+              <div className="p-2 bg-green-50 rounded-full mb-2">
+                {React.cloneElement(feature.icon, { size: 20, className: "text-green-600" })}
               </div>
-            ))}
-          </div>
+              <p className="text-xs text-gray-500 mb-1">{feature.label}</p>
+              <p className="font-medium text-gray-900 text-sm">{feature.value}</p>
+            </div>
+          ))}
+        </div>
 
-          {/* Description */}
-          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-2 md:p-4 mb-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
-              <Check className="text-green-600" /> Property Highlights
-            </h2>
-            <p className="text-gray-800 leading-relaxed whitespace-pre-line">{listingDetail.description}</p>
-          </div>
+        {/* Description */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 sm:p-4 mb-3 sm:mb-4">
+          <h2 className="text-lg font-bold text-gray-900 mb-2 sm:mb-3 flex items-center gap-2">
+            <Check className="text-green-600" /> Property Highlights
+          </h2>
+          <p className="text-gray-800 leading-relaxed whitespace-pre-line text-sm">{listingDetail.description}</p>
+        </div>
 
-          {/* Map */}
-          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 p-0 mb-3">
-            <h2 className="text-lg font-bold text-gray-900 mb-3 p-1 flex items-center gap-1">
-              <MapPin className="text-green-600" /> Location on Map
-            </h2>
-            <div className="rounded-2xl overflow-hidden border border-gray-200">
-              <div className="h-[450px] sm:h-[500px] md:h-[500px] relative"> {/* Reduced height here */}
+        {/* Embedded YouTube Videos - ONLY above the Map */}
+        {Array.isArray(listingDetail?.listingVideos) && listingDetail.listingVideos.length > 0 && (
+          <div className="mb-3 sm:mb-4 space-y-3 sm:space-y-4">
+            {listingDetail.listingVideos.map((video, idx) => {
+              // Extract YouTube video ID from various URL formats, including Shorts
+              let videoId = null;
+              const url = video.url || "";
+              const patterns = [
+                /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/,
+                /youtube\.com\/watch\?.*v=([\w-]{11})/
+              ];
+              for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match) {
+                  videoId = match[1];
+                  break;
+                }
+              }
+              if (!videoId) return null;
+              return (
+                <div key={idx} className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+                  <div className="aspect-video w-full">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${videoId}`}
+                      title={`Property Video ${idx + 1}`}
+                      className="w-full h-full"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Map */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-3 sm:mb-4">
+          <h2 className="text-lg font-bold text-gray-900 mb-2 sm:mb-3 p-2 sm:p-4 pb-0 flex items-center gap-2">
+            <MapPin className="text-green-600" /> Location on Map
+          </h2>
+          <div className="p-2 sm:p-4 pt-0">
+            <div className="rounded-lg overflow-hidden border border-gray-200">
+              <div className="h-[250px] sm:h-[300px] md:h-[350px] relative">
                 <OpenStreetMapSection
                   coordinates={listingDetail.coordinates}
                   listing={[listingDetail]}
@@ -192,15 +223,16 @@ function Details({ listingDetail }) {
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Agent */}
-          <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 p-1 pt-4 md:p-4">
-            <h2 className="text-xl font-bold text-gray-900 mb-3 flex justify-center items-center gap-1">
-              <Phone className="text-green-600" /> Contact Agent
-            </h2>
+        {/* Agent */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-3 sm:mb-4">
+          <h2 className="text-lg font-bold text-gray-900 mb-2 sm:mb-3 p-2 sm:p-4 pb-0 flex justify-center items-center gap-2">
+            <Phone className="text-green-600" /> Contact Agent
+          </h2>
+          <div className="p-2 sm:p-4 pt-0">
             <AgentDetail listingDetail={listingDetail} />
           </div>
-
         </div>
       </div>
     </>

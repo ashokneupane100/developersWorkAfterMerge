@@ -116,6 +116,30 @@ function UserProfile() {
                           <label className="block text-sm font-medium text-gray-500">Email</label>
                           <div className="mt-1 text-gray-900">{user?.email}</div>
                         </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-500">Role</label>
+                          <div className="mt-1">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              profile?.user_role === 'Admin' ? 'bg-red-100 text-red-800' :
+                              profile?.user_role === 'Agent' ? 'bg-green-100 text-green-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {profile?.user_role === 'Admin' ? 'Administrator' :
+                               profile?.user_role === 'Agent' ? 'Agent' :
+                               profile?.user_role || 'User'}
+                            </span>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-500">Account Status</label>
+                          <div className="mt-1">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              profile?.email_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {profile?.email_verified ? 'Verified' : 'Unverified'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

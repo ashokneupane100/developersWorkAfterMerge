@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/utils/supabase/client';
-import { Bath, BedDouble, MapPin, Ruler, ShieldAlert } from 'lucide-react';
+import { Bath, BedDouble, MapPin, Ruler, ShieldAlert, Trash2, Edit } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
@@ -11,9 +11,10 @@ import { formatCurrency } from '@/components/helpers/formatCurrency';
 import { useAuth } from '@/contexts/AuthContext';
 
 function UserListing() {
-    const { user, loading: authLoading } = useAuth();
+    const { user, profile, loading: authLoading } = useAuth();
     const [listing, setListing] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [deletingId, setDeletingId] = useState(null);
 
     useEffect(() => {
         if (user) {
@@ -24,8 +25,8 @@ function UserListing() {
                         .from('listing')
                         .select(`*, listingImages(url, listing_id)`);
 
-                    // If not admin, only show user's listings
-                    if (user?.email !== 'ashokabrother@gmail.com') {
+                    // If not admin, only show user's listings (agents can only see their own)
+                    if (!isAdmin) {
                         query = query.eq('createdBy', user?.email);
                     }
 
@@ -45,18 +46,59 @@ function UserListing() {
         }
     }, [user]);
 
-    // Check if user is admin
-    const isAdmin = user?.email === 'ashokabrother@gmail.com';
+    // Check user roles (using the enum values from database)
+    const isAdmin = profile?.user_role === 'Admin' || user?.email === 'ashokabrother@gmail.com';
+    const isAgent = profile?.user_role === 'Agent';
 
     const handleEditClick = (e) => {
         if (authLoading) return;
         
-        if (!isAdmin) {
+        if (!isAdmin && !isAgent) {
             e.preventDefault();
-            toast.error("Only administrators can edit listings", {
+            toast.error("Only administrators and agents can edit listings", {
                 description: "Please contact the administrator for any changes.",
                 duration: 4000,
             });
+        }
+    };
+
+    // Check if user can edit a specific listing
+    const canEditListing = (listingCreatedBy) => {
+        if (isAdmin) return true; // Admin can edit all
+        if (isAgent && listingCreatedBy === user?.email) return true; // Agent can only edit their own
+        return false;
+    };
+
+    const handleDeleteClick = async (itemId, itemTitle) => {
+        if (!isAdmin) {
+            toast.error("Only administrators can delete listings", {
+                description: "Please contact the administrator for any changes.",
+                duration: 4000,
+            });
+            return;
+        }
+
+        if (!confirm(`Are you sure you want to delete "${itemTitle}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        setDeletingId(itemId);
+        try {
+            const { error } = await supabase
+                .from('listing')
+                .delete()
+                .eq('id', itemId);
+
+            if (error) throw error;
+
+            toast.success('Listing deleted successfully');
+            // Remove the deleted item from the list
+            setListing(prev => prev.filter(item => item.id !== itemId));
+        } catch (error) {
+            console.error('Error deleting listing:', error);
+            toast.error('Failed to delete listing');
+        } finally {
+            setDeletingId(null);
         }
     };
 
@@ -68,30 +110,59 @@ function UserListing() {
         if (isAdmin) {
             return "Manage All Listings (Admin View)";
         }
+        if (isAgent) {
+            return "Your Listings (Agent View)";
+        }
         return "Your Listings";
+    };
+
+    const getRoleBadge = () => {
+        if (isAdmin) {
+            return <div className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm">Admin Access</div>;
+        }
+        if (isAgent) {
+            return <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">Agent Access</div>;
+        }
+        return null;
+    };
+
+    const getPermissionMessage = () => {
+        if (isAdmin) {
+            return "You have full access to edit and delete all listings.";
+        }
+        if (isAgent) {
+            return "You can edit only your own listings. Contact admin for other changes.";
+        }
+        return "Only administrators and agents can edit listings. Contact admin for any changes.";
     };
 
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2 className='font-bold text-2xl'>{getListingHeader()}</h2>
-                {isAdmin && (
-                    <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
-                        Admin Access
-                    </div>
-                )}
+                {getRoleBadge()}
             </div>
 
-            {!isAdmin && (
-                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-                    <div className="flex items-center">
-                        <ShieldAlert className="h-5 w-5 text-yellow-400 mr-2" />
-                        <p className="text-sm text-yellow-700">
-                            Note: Only administrators can edit listings. Contact admin for any changes.
-                        </p>
-                    </div>
+            <div className={`border-l-4 p-4 mb-4 ${
+                isAdmin ? 'bg-green-50 border-green-400' : 
+                isAgent ? 'bg-blue-50 border-blue-400' : 
+                'bg-yellow-50 border-yellow-400'
+            }`}>
+                <div className="flex items-center">
+                    <ShieldAlert className={`h-5 w-5 mr-2 ${
+                        isAdmin ? 'text-green-400' : 
+                        isAgent ? 'text-blue-400' : 
+                        'text-yellow-400'
+                    }`} />
+                    <p className={`text-sm ${
+                        isAdmin ? 'text-green-700' : 
+                        isAgent ? 'text-blue-700' : 
+                        'text-yellow-700'
+                    }`}>
+                        {getPermissionMessage()}
+                    </p>
                 </div>
-            )}
+            </div>
 
             {listing.length === 0 ? (
                 <div className="text-center py-10">
@@ -165,13 +236,14 @@ function UserListing() {
                                         </Button>
                                     </Link>
                                     
-                                    {isAdmin ? (
+                                    {canEditListing(item.createdBy) ? (
                                         <Link href={`/edit-listing/${item.id}`} className="flex-1">
                                             <Button 
-                                                className="w-full bg-blue-600 hover:bg-blue-700"
+                                                className="w-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center gap-2"
                                                 size="sm"
                                             >
-                                                Edit as Admin
+                                                <Edit className="h-4 w-4" />
+                                                {isAdmin ? 'Edit as Admin' : 'Edit as Agent'}
                                             </Button>
                                         </Link>
                                     ) : (
@@ -180,11 +252,26 @@ function UserListing() {
                                             size="sm"
                                             onClick={handleEditClick}
                                             variant="secondary"
+                                            disabled
                                         >
-                                            Edit (Admin Only)
+                                            {isAgent && item.createdBy !== user?.email ? 'Edit (Your Posts Only)' : 'Edit (Admin/Agent Only)'}
                                         </Button>
                                     )}
                                 </div>
+
+                                {/* Delete button - only for admin */}
+                                {isAdmin && (
+                                    <Button 
+                                        className="w-full mt-2 bg-red-600 hover:bg-red-700 text-white border-red-600 flex items-center justify-center gap-2"
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleDeleteClick(item.id, item.post_title || 'Untitled Property')}
+                                        disabled={deletingId === item.id}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                        {deletingId === item.id ? 'Deleting...' : 'Delete Listing'}
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     ))}

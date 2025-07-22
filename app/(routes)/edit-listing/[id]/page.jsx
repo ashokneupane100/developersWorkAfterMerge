@@ -38,6 +38,7 @@ import {
   Save,
   Loader,
   ArrowLeft,
+  Video,
 } from "lucide-react";
 
 const ListingSchema = Yup.object()
@@ -97,6 +98,7 @@ function EditListing({ params: paramsPromise }) {
   const router = useRouter();
   const [listing, setListing] = useState(null);
   const [images, setImages] = useState([]);
+  const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [hasPermission, setHasPermission] = useState(false);
@@ -122,7 +124,7 @@ function EditListing({ params: paramsPromise }) {
     try {
       const { data, error } = await supabase
         .from("listing")
-        .select("*,listingImages(listing_id,url)")
+        .select("*,listingImages(listing_id,url),listingVideos(listing_id,url)")
         .eq("id", id)
         .single();
 
@@ -148,6 +150,10 @@ function EditListing({ params: paramsPromise }) {
 
       setHasPermission(true);
       setListing(data);
+      // Set existing videos
+      if (data.listingVideos) {
+        setVideos(data.listingVideos.map(video => video.url));
+      }
     } catch (error) {
       console.error("Error fetching listing:", error);
       toast.error("Failed to load listing: " + error.message);
@@ -197,6 +203,45 @@ function EditListing({ params: paramsPromise }) {
     } catch (error) {
       console.error("Upload process error:", error);
       toast.error("Image upload process failed");
+      return false;
+    }
+  };
+
+  const updateVideos = async (listingId) => {
+    try {
+      // First, delete existing videos for this listing
+      const { error: deleteError } = await supabase
+        .from("listingVideos")
+        .delete()
+        .eq("listing_id", listingId);
+
+      if (deleteError) {
+        console.error("Error deleting existing videos:", deleteError);
+        toast.error("Failed to update videos");
+        return false;
+      }
+
+      // Then insert new videos
+      for (const videoUrl of videos) {
+        if (videoUrl && videoUrl.trim()) {
+          const { error: insertError } = await supabase
+            .from("listingVideos")
+            .insert({
+              url: videoUrl.trim(),
+              listing_id: listingId,
+            });
+
+          if (insertError) {
+            console.error("Video insert error:", insertError);
+            toast.error("Failed to save video");
+            return false;
+          }
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error("Video update process error:", error);
+      toast.error("Video update process failed");
       return false;
     }
   };
@@ -356,18 +401,23 @@ const onSubmitHandler = async (values, { setFieldError }) => {
   setSaving(true);
 
   try {
-    if (images.length === 0) {
+    // Check if there are existing images or new images being uploaded
+    const existingImages = listing?.listingImages || [];
+    const hasExistingImages = existingImages.length > 0;
+    const hasNewImages = images.length > 0;
+    
+    if (!hasExistingImages && !hasNewImages) {
       toast.error("Please upload at least 1 image");
       setSaving(false);
       return;
     }
 
-    // ✅ INSERT INTO pending_listings (with 's')
-    const { data: insertedListing, error: insertError } = await supabase
-      .from("pending_listings") // ✅ Corrected table name
-      .insert({
+    // Update the listing
+    const { error: updateError } = await supabase
+      .from("listing")
+      .update({
         action: values.action,
-        propertytype: values.propertyType,
+        propertyType: values.propertyType,
         rooms: values.propertyType === "Land" ? null : Number(values.rooms),
         bathrooms: values.propertyType === "Land" ? null : values.bathrooms,
         parking: values.propertyType === "Land" ? null : values.parking,
@@ -376,85 +426,41 @@ const onSubmitHandler = async (values, { setFieldError }) => {
         phone: values.phone,
         description: values.description,
         post_title: values.post_title,
-        createdby: user.email,
-        fullname: user.name || "",
-        profileimage: user.image || "",
-        active: true,
-        status: "pending",
-        views: 0,
-        sold: false,
-        khali_hune_date: null,
-        coordinates: listing?.coordinates,
-        address: listing?.address,
+        fullName: user.name || "",
+        profileImage: user.image || "",
       })
-      .select("id") // returns the inserted row's id
-      .single();
+      .eq("id", id);
 
-    if (insertError || !insertedListing) {
-      console.error("Insert error:", insertError);
-      toast.error("Failed to submit listing.");
+    if (updateError) {
+      console.error("Update error:", updateError);
+      toast.error("Failed to update listing.");
       setSaving(false);
       return;
     }
 
-    const pendingId = insertedListing.id;
-
-    // ✅ Upload images and insert into pending_listing_images
-    for (const image of images) {
-      if (!(image instanceof File)) {
-        console.warn("Skipped non-File object:", image);
-        continue;
-      }
-
-      const fileExt = image.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("pendinglistingimages") 
-        .upload(fileName, image, {
-          cacheControl: '3600',
-          upsert: false,
-          contentType: image.type
-        });
-
-      if (uploadError) {
-        console.error("Image upload failed:", uploadError);
-        toast.error("Image upload failed. Skipping image.");
-        continue;
-      }
-
-      const { data: publicUrlData } = await supabase.storage
-        .from("pendinglistingimages")
-        .getPublicUrl(fileName);
-
-      const imageUrl = publicUrlData?.publicUrl;
-
-      if (!imageUrl) {
-        console.error("Public URL missing for uploaded image.");
-        continue;
-      }
-
-      // ✅ Insert into the pending_listing_images table
-      const { error: imageInsertError } = await supabase
-        .from("pendinglistingimages")
-        .insert({
-          pending_listing_id: pendingId, // ✅ Foreign key
-          url: imageUrl
-        });
-
-      if (imageInsertError) {
-        console.error("Image reference DB insert error:", imageInsertError);
-        toast.error("One or more images failed to save.");
+    // Upload new images (only if there are any)
+    if (images.length > 0) {
+      const imageUploadSuccess = await uploadImages(id);
+      if (!imageUploadSuccess) {
+        setSaving(false);
+        return;
       }
     }
 
-    toast.success("Your listing has been submitted successfully!");
+    // Update videos
+    const videoUpdateSuccess = await updateVideos(id);
+    if (!videoUpdateSuccess) {
+      setSaving(false);
+      return;
+    }
+
+    toast.success("Listing updated successfully!");
 
     setTimeout(() => {
-      router.push("/"); // or wherever you want to redirect after submission
+      handleReturnNavigation();
     }, 1500);
   } catch (error) {
-    console.error("Unexpected submission error:", error);
+    console.error("Unexpected update error:", error);
     toast.error("An unexpected error occurred.");
   } finally {
     setSaving(false);
@@ -792,6 +798,53 @@ const onSubmitHandler = async (values, { setFieldError }) => {
                   )}
                   <p className="text-sm text-gray-500">
                     {values.description?.length || 0}/1000 characters
+                  </p>
+                </div>
+
+                {/* Video URLs */}
+                <div className="space-y-3">
+                  <label className="text-gray-600 font-bold flex items-center gap-2">
+                    <Video className="h-5 w-5 text-primary" />
+                    YouTube Video URLs
+                  </label>
+                  <div className="space-y-3">
+                    {videos.map((video, index) => (
+                      <div key={index} className="flex gap-2">
+                        <Input
+                          type="url"
+                          placeholder="https://www.youtube.com/watch?v=..."
+                          value={video}
+                          onChange={(e) => {
+                            const newVideos = [...videos];
+                            newVideos[index] = e.target.value;
+                            setVideos(newVideos);
+                          }}
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            const newVideos = videos.filter((_, i) => i !== index);
+                            setVideos(newVideos);
+                          }}
+                          className="px-3"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setVideos([...videos, ""])}
+                      className="w-full"
+                    >
+                      Add Video URL
+                    </Button>
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    Add YouTube video URLs to showcase your property. Videos will be embedded on the listing page.
                   </p>
                 </div>
 

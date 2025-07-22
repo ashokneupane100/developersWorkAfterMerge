@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import Slider from "../_components/Slider";
 import Details from "../_components/Details";
+import VideoSection from "../_components/VideoSection";
 import {
   EyeIcon,
   MapPinIcon,
@@ -62,7 +63,7 @@ function ViewListing({ params }) {
       setLoading(true);
       const { data, error } = await supabase
         .from("listing")
-        .select("*, listingImages(url, listing_id), khali_hune_date")
+        .select("*, listingImages(url, listing_id), listingVideos(url, listing_id), khali_hune_date")
         .eq("id", id)
         .eq("active", true)
         .single();
@@ -162,7 +163,7 @@ function ViewListing({ params }) {
     <div className="min-h-screen bg-gray-50 pb-12">
       {/* Page Header with Property Title */}
       <div className="bg-white border-b shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 py-5">
+        <div className="w-full px-2 sm:px-4 lg:px-6 py-5">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-1">
             {listingDetail?.post_title || 'Property Listing'}
           </h1>
@@ -183,7 +184,7 @@ function ViewListing({ params }) {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 pt-5">
+      <div className="w-full px-2 sm:px-4 lg:px-6 pt-5">
         {/* Time Ticker (if property will be vacant soon) */}
         {listingDetail?.khali_hune_date && showVacancyCountdown && (
           <div className="mb-6 bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 rounded-lg shadow-sm p-4">
@@ -204,23 +205,26 @@ function ViewListing({ params }) {
             </div>
           </div>
         )}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6">
           {/* Left Column: Images & Property Details */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-3 sm:space-y-6">
             {/* Image Slider */}
             <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
               <Slider imageList={listingDetail?.listingImages} />
             </div>
 
             {/* Property Details */}
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 p-6">
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 p-3 sm:p-6">
               <h2 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b">Property Details</h2>
               <Details listingDetail={listingDetail} />
             </div>
+
+            {/* Video Section */}
+            <VideoSection videos={listingDetail?.listingVideos || []} />
           </div>
 
           {/* Right Column: Price, Actions, Contact */}
-          <div className="space-y-6">
+          <div className="space-y-3 sm:space-y-6">
             {/* Price Card */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
               <div className="bg-blue-50 p-4 border-b border-blue-100">
