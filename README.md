@@ -12,7 +12,7 @@ All modifications should be coordinated and approved to avoid conflicts or unint
 
 
 
-This is the production level code lab of next.js realEstate project where you can learn next.js and supabase by doing realWorld Project . Happy Coding !!!
+This is the production level code lab of next.js realEstate project where you can learn next.js and supabase by doing realWorld Project . Happy Coding for all the developers !!!
 
 # supabaseAuthWithoutForgetPassword
 # developersWorkAfterMerge
