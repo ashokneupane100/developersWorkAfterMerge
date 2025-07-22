@@ -585,7 +585,7 @@ const ListingNew = ({
                 >
                   <AdjustmentsHorizontalIcon className="h-6 w-6" />
                   <span>
-                    {showListingFilters ? "Hide Filters" : "Show Filters"}
+                    {showListingFilters ? "Hide Filters" : "अझ गहिरोसँग खोज्नुहोस"}
                   </span>
 
                   {getActiveListingFiltersCount() > 0 && (
