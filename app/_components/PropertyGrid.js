@@ -19,51 +19,36 @@ const PropertyCard = ({ item, toggleFavorite, favorites }) => {
 
   return (
     <div className="relative group bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100">
-      {/* Image Container */}
-      <div className="relative aspect-[16/9] w-full cursor-pointer">
-        <Image
-          src={imageUrl}
-          alt={item.title || "Property"}
-          fill
-          className="object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          onError={(e) => {
-            e.target.src = "/assets/images/placeholder-property.jpg";
-          }}
-        />
-
-        {/* Favorite Button */}
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            toggleFavorite(item.id);
-          }}
-          className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white transition-colors"
-        >
-          <Heart
-            className={`h-4 w-4 ${
-              isFavorite ? "fill-red-500 text-red-500" : "text-gray-600"
-            }`}
-          />
-        </button>
-
-        {/* Price Tag */}
-        <div className="absolute bottom-2 right-2 bg-white/90 px-3 py-1 rounded text-blue-900 font-semibold text-sm">
-          {item.price ? `Rs ${formatCurrency(item.price)}` : "Price on Request"}
-        </div>
-
-        {/* Action Tag (Rent/Sale) */}
-        <div
-          className={`absolute top-4 left-4 px-4 py-1 rounded text-white text-base font-medium ${
-            item.action === "Sell" ? "bg-blue-600" : "bg-purple-600"
-          }`}
-        >
-          For {item.action === "Sell" ? "Sale" : "Rent"}
-        </div>
-      </div>
-
-      {/* Content */}
       <Link href={`/view-listing/${item.id}`} className="block">
+        {/* Image Container */}
+        <div className="relative aspect-[16/9] w-full cursor-pointer">
+          <Image
+            src={imageUrl}
+            alt={item.title || "Property"}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            onError={(e) => {
+              e.target.src = "/assets/images/placeholder-property.jpg";
+            }}
+          />
+
+          {/* Price Tag */}
+          <div className="absolute bottom-2 right-2 bg-white/90 px-3 py-1 rounded text-blue-900 font-semibold text-sm">
+            {item.price ? `Rs ${formatCurrency(item.price)}` : "Price on Request"}
+          </div>
+
+          {/* Action Tag (Rent/Sale) */}
+          <div
+            className={`absolute top-4 left-4 px-4 py-1 rounded text-white text-base font-medium ${
+              item.action === "Sell" ? "bg-blue-600" : "bg-purple-600"
+            }`}
+          >
+            For {item.action === "Sell" ? "Sale" : "Rent"}
+          </div>
+        </div>
+
+        {/* Content */}
         <div className="p-4">
           <h3 className="font-semibold text-lg mb-2 text-gray-900 line-clamp-2">
             {item.title || item.post_title || "Property Title"}
@@ -106,6 +91,22 @@ const PropertyCard = ({ item, toggleFavorite, favorites }) => {
           </div>
         </div>
       </Link>
+
+      {/* Favorite Button - Outside Link to prevent interference */}
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleFavorite(item.id);
+        }}
+        className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10"
+      >
+        <Heart
+          className={`h-4 w-4 ${
+            isFavorite ? "fill-red-500 text-red-500" : "text-gray-600"
+          }`}
+        />
+      </button>
     </div>
   );
 };

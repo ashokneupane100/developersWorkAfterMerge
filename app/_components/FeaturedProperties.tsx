@@ -145,8 +145,12 @@ const FeaturedProperties: React.FC = () => {
                   </div>
                 </Link>
                 <button
-                  onClick={() => toggleFavorite(item.id)}
-                  className="absolute top-2 right-2 p-2 bg-white/80 rounded-full hover:bg-white"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleFavorite(item.id);
+                  }}
+                  className="absolute top-2 right-2 p-2 bg-white/80 rounded-full hover:bg-white z-10"
                 >
                   {favorites.includes(item.id) ? (
                     <HeartIconSolid className="h-5 w-5 text-red-500" />

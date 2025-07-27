@@ -268,9 +268,10 @@ const PropertyCard = ({ item, toggleFavorite, favorites }) => {
       <button
         onClick={(e) => {
           e.preventDefault();
+          e.stopPropagation();
           toggleFavorite(item.id, e);
         }}
-        className="absolute top-2 right-2 p-2 bg-white/80 rounded-full hover:bg-white transition-colors duration-200"
+        className="absolute top-2 right-2 p-2 bg-white/80 rounded-full hover:bg-white transition-colors duration-200 z-10"
       >
         {favorites.includes(item.id) ? (
           <HeartIconSolid className="h-5 w-5 text-red-500" />
