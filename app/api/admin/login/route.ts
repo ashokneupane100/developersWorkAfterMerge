@@ -113,15 +113,16 @@ export async function POST(request: Request) {
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("user_role")
-      .eq("id", userId)
+      .eq("user_id", userId)
       .single();
 
     if (profileError || !profile) {
-      return NextResponse.json(
-        { error: "User profile not found" },
-        { status: 404 }
-      );
-    }
+  return NextResponse.json(
+    { error: "User profile not found. Please ensure your account is set up correctly." },
+    { status: 404 }
+  );
+}
+
 
     // Check if the user is an admin
     if (profile.user_role !== "Admin") {
