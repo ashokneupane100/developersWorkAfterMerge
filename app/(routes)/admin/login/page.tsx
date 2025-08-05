@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from 'react';
-import { ChevronLeft } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { ChevronLeft } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const AdminLogin = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
@@ -37,7 +37,7 @@ const AdminLogin = () => {
 
   //     // Store admin token in localStorage
   //     localStorage.setItem('adminToken', data.token);
-      
+
   //     // Redirect to admin dashboard
   //     router.push('/admin/');
   //   } catch (error) {
@@ -48,54 +48,47 @@ const AdminLogin = () => {
   //   }
   // };
 
-
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError('');
-  setIsLoading(true);
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
 
-  try {
-    // 1. Authenticate user using Supabase Auth
-    const authRes = await fetch('/api/admin/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      // 1. Authenticate user using Supabase Auth
+      const authRes = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const data = await authRes.json();
+      const data = await authRes.json();
 
-    if (!authRes.ok) {
-      setError(data.error || 'Login failed');
+      if (!authRes.ok) {
+        setError(data.error || "Login failed");
+        setIsLoading(false);
+        return;
+      }
+
+      // 2. Store token from server
+      localStorage.setItem("adminToken", data.token);
+
+      // 3. Redirect only if user is admin (this is already checked by server)
+      router.push("/admin/");
+    } catch (error) {
+      console.error("Authentication error:", error);
+      setError("An error occurred during authentication");
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    // 2. Store token from server
-    localStorage.setItem('adminToken', data.token);
-
-    // 3. Redirect only if user is admin (this is already checked by server)
-    router.push('/admin/');
-  } catch (error) {
-    console.error('Authentication error:', error);
-    setError('An error occurred during authentication');
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 relative">
       {/* Top-left Button */}
       <div className="absolute top-6 left-6">
-        <Link
-          href="/"
-          className="inline-flex items-center text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-md px-4 py-2 transition"
-        >
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Return to Main Site
-        </Link>
+        
       </div>
 
       {/* Centered Form */}
@@ -149,13 +142,37 @@ const AdminLogin = () => {
             </div>
 
             <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-md py-3 transition focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:bg-indigo-400"
-            >
-              {isLoading ? 'Logging in...' : 'Log In'}
-            </button>
+  type="submit"
+  disabled={isLoading}
+  style={{
+    backgroundColor: "#333", 
+    color: "#fff",           
+    width: "100%",
+    padding: "12px 0",
+    fontSize: "16px",
+    fontWeight: "600",
+    borderRadius: "8px",
+    border: "none",
+    cursor: isLoading ? "not-allowed" : "pointer",
+    opacity: isLoading ? 0.6 : 1,
+    transition: "background-color 0.3s ease"
+  }}
+>
+  {isLoading ? "Logging in..." : "Log In"}
+</button>
+
           </form>
+          {/* Return to Main Site Link */}
+<div className="mt-6 text-center">
+  <Link
+    href="/"
+    className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-800 transition"
+  >
+    <ChevronLeft className="h-4 w-4 mr-1" />
+    Back to Main Site
+  </Link>
+</div>
+
         </div>
       </div>
     </div>
