@@ -18,7 +18,7 @@ import {
   SidebarTrigger,
 } from "@/components/agentui/sidebar"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/agentui/avatar"
 
 const menuItems = [
   {
