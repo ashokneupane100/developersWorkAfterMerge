@@ -38,6 +38,7 @@
     "formik": "^2.4.6",
     "framer-motion": "^12.6.2",
     "image-compression": "^0.0.6",
+    "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
     "leaflet": "^1.9.4",
     "leaflet-geosearch": "^4.2.0",
