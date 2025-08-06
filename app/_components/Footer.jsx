@@ -215,9 +215,11 @@ const Footer = () => {
 
             {/* Developed By */}
             <div className="text-center md:text-right">
+              <Link href="https://github.com/ashokneupane100" target="_blank" rel="noopener noreferrer">
               <p className="text-gray-400 text-sm">
-                Developed with ❤️ by <span className="text-teal-300 font-medium">OnlineHome Team</span>
+                Developed with ❤️ by <span className="text-teal-300 font-medium">Ashok Neupane</span>
               </p>
+              </Link>
               <p className="text-gray-500 text-xs mt-1">Powered by Artova Solutions</p>
             </div>
           </div>
