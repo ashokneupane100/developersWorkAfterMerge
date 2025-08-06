@@ -9,7 +9,8 @@
     "lint": "next lint",
     "shadcn": "npx @shadcn/ui",
     "analyze": "ANALYZE=true npm run build",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "fast": "cross-env NODE_OPTIONS=--max-old-space-size=4096 next dev"
   },
   "dependencies": {
     "@changey/react-leaflet-markercluster": "^4.0.0-rc1",
@@ -72,6 +73,7 @@
     "class-variance-authority": "^0.7.1",
     "cli": "^1.0.1",
     "clsx": "^2.1.1",
+    "cross-env": "^10.0.0",
     "lucide-react": "^0.468.0",
     "postcss": "^8",
     "shadcn-ui": "^0.9.4",

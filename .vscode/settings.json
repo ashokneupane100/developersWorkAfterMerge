@@ -1,4 +1,23 @@
 {
-    "WillLuke.nextjs.addTypesOnSave": true,
-    "WillLuke.nextjs.hasPrompted": true
+  "WillLuke.nextjs.addTypesOnSave": true,
+  "WillLuke.nextjs.hasPrompted": true,
+
+  "typescript.tsserver.experimental.enableProjectDiagnostics": false,
+  "javascript.implicitProjectConfig.checkJs": false,
+  "editor.formatOnSave": false,
+  "files.watcherExclude": {
+    "**/.next/**": true,
+    "**/node_modules/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.next": true
+  },
+  "eslint.enable": false,
+  "prettier.disableLanguages": [
+    "javascript",
+    "typescript",
+    "javascriptreact",
+    "typescriptreact"
+  ]
 }
