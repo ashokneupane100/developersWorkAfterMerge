@@ -13,10 +13,8 @@
   },
   "dependencies": {
     "@changey/react-leaflet-markercluster": "^4.0.0-rc1",
-
     "@heroicons/react": "^2.2.0",
     "@heroui/react": "^2.7.5",
-
     "@next/bundle-analyzer": "^15.1.6",
     "@prisma/client": "^6.12.0",
     "@radix-ui/react-alert-dialog": "^1.0.5",
@@ -27,8 +25,8 @@
     "@radix-ui/react-select": "^2.0.0",
     "@radix-ui/react-slider": "^1.2.1",
     "@radix-ui/react-slot": "^1.1.1",
+    "@radix-ui/react-switch": "^1.2.5",
     "@react-google-maps/api": "^2.20.7",
-
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.16",
     "axios": "^1.7.9",
@@ -44,11 +42,11 @@
     "leaflet-geosearch": "^4.2.0",
     "lodash.debounce": "^4.0.8",
     "next": "^15.1.0",
-
     "next-cloudinary": "^6.16.0",
     "next-themes": "^0.3.0",
     "nodemailer": "^6.10.0",
     "prisma": "^6.12.0",
+    "radix-ui": "^1.4.2",
     "react": "18.2.0",
     "react-currency-input-field": "^3.9.0",
     "react-dom": "18.2.0",
