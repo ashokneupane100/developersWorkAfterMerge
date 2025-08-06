@@ -1,15 +1,15 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Home, Eye, Edit, MoreHorizontal, Clock, Search, Filter, AlertCircle } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Home, Eye, Edit, MoreHorizontal, Clock, Search, Filter, AlertCircle } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Progress } from "@/components/agentui/progress"
+} from "@/components/ui/dropdown-menu";
+import { Progress } from "@/components/agentui/progress";
 
 export default function PendingListings() {
   const pendingListings = [
@@ -43,19 +43,19 @@ export default function PendingListings() {
       progress: 90,
       image: "/placeholder.svg?height=80&width=80"
     }
-  ]
+  ];
 
-  const getUrgencyColor = (days: number) => {
-    if (days <= 2) return "text-green-600"
-    if (days <= 4) return "text-amber-600"
-    return "text-red-600"
-  }
+  const getUrgencyColor = (days) => {
+    if (days <= 2) return "text-green-600";
+    if (days <= 4) return "text-amber-600";
+    return "text-red-600";
+  };
 
-  const getProgressColor = (progress: number) => {
-    if (progress <= 30) return "bg-blue-500"
-    if (progress <= 70) return "bg-amber-500"
-    return "bg-emerald-500"
-  }
+  const getProgressColor = (progress) => {
+    if (progress <= 30) return "bg-blue-500";
+    if (progress <= 70) return "bg-amber-500";
+    return "bg-emerald-500";
+  };
 
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
@@ -243,5 +243,5 @@ export default function PendingListings() {
         ))}
       </div>
     </div>
-  )
+  );
 }

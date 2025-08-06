@@ -1,9 +1,8 @@
 "use client"
 
-import { BarChart3, CheckCircle, Clock, XCircle, Settings, LogOut, Home, ArrowLeft, Menu } from 'lucide-react'
+import { BarChart3, CheckCircle, Clock, XCircle, Settings, LogOut, Home, ArrowLeft } from 'lucide-react'
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-
 import {
   Sidebar,
   SidebarContent,
@@ -14,43 +13,40 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
-  SidebarTrigger,
-} from "@/components/agentui/sidebar"
+} from "@/components/agentui/sidebar" // Corrected import path
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/agentui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/agentui/avatar" 
 
 const menuItems = [
   {
     title: "Overview",
-    url: "/",
+    url: "/agent", // Corrected URL
     icon: BarChart3,
   },
   {
     title: "Approved Listings",
-    url: "/approved",
+    url: "/agent/approved", // Corrected URL
     icon: CheckCircle,
   },
   {
-    title: "Pending Listings", 
-    url: "/pending",
+    title: "Pending Listings",
+    url: "/agent/pending", // Corrected URL
     icon: Clock,
   },
   {
     title: "Rejected Listings",
-    url: "/rejected", 
+    url: "/agent/rejected", // Corrected URL
     icon: XCircle,
   },
   {
     title: "Settings",
-    url: "/settings",
+    url: "/agent/settings", // Corrected URL
     icon: Settings,
   },
 ]
 
-export function AgentSidebar() {
+export default function AgentSidebar() { // Changed to default export
   const pathname = usePathname()
-
   return (
     <Sidebar className="border-r-0">
       <SidebarHeader className="p-6 bg-gradient-to-r from-blue-600 to-blue-700">
@@ -67,7 +63,6 @@ export function AgentSidebar() {
             <p className="text-blue-100 text-sm">Real Estate Dashboard</p>
           </div>
         </div>
-        
         <div className="flex items-center space-x-3 mt-4 p-3 bg-white/10 rounded-lg">
           <Avatar className="h-10 w-10">
             <AvatarImage src="/placeholder.svg?height=40&width=40" />
@@ -79,19 +74,18 @@ export function AgentSidebar() {
           </div>
         </div>
       </SidebarHeader>
-      
       <SidebarContent className="px-4 py-6">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild 
+                  <SidebarMenuButton
+                    asChild
                     isActive={pathname === item.url}
                     className="h-12 px-4 rounded-xl hover:bg-blue-50 hover:text-blue-700 data-[active=true]:bg-gradient-to-r data-[active=true]:from-blue-500 data-[active=true]:to-blue-600 data-[active=true]:text-white data-[active=true]:shadow-lg"
                   >
-                    <Link href={item.url}>
+                    <Link href={item.url} className="flex items-center gap-2">
                       <item.icon className="h-5 w-5" />
                       <span className="font-medium">{item.title}</span>
                     </Link>
@@ -102,7 +96,6 @@ export function AgentSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-
       <SidebarFooter className="p-4 border-t bg-gradient-to-r from-red-50 to-red-100">
         <SidebarMenu>
           <SidebarMenuItem>

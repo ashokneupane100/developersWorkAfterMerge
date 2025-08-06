@@ -1,14 +1,14 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Home, Eye, Edit, MoreHorizontal, Search, Filter, TrendingUp, Users, DollarSign } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Home, Eye, Edit, MoreHorizontal, Search, Filter, TrendingUp, Users } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 
 export default function ApprovedListings() {
   const approvedListings = [
@@ -52,7 +52,7 @@ export default function ApprovedListings() {
       inquiries: 15,
       image: "/placeholder.svg?height=80&width=80"
     }
-  ]
+  ];
 
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
@@ -220,5 +220,5 @@ export default function ApprovedListings() {
         ))}
       </div>
     </div>
-  )
+  );
 }
