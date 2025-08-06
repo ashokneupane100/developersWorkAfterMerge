@@ -27,7 +27,7 @@ export default function AgentLoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/agent-login", {
+      const res = await fetch("/api/login/agent", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });

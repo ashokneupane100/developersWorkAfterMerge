@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
     const { data: profile, error: profileError } = await (await supabase)
       .from("profiles")
-      .select("user_role")
+      .select("user_role, full_name, email") // <-- make sure these fields exist in your table
       .eq("user_id", userId)
       .single();
 
@@ -35,10 +35,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Access denied. Agents only." }, { status: 403 });
     }
 
-    // Store token in cookies for SSR
+    const cookieStore = cookies();
+
     const token = Buffer.from(`agent-${userId}-${Date.now()}`).toString("base64");
-    (await cookies()).set("agent_token", token, { httpOnly: true, secure: true, path: "/", maxAge: 60 * 60 * 24 * 7 });
-    (await cookies()).set("agent_role", profile.user_role, { httpOnly: true, secure: true, path: "/", maxAge: 60 * 60 * 24 * 7 });
+
+    // Store all required values in cookies
+    (await
+          // Store all required values in cookies
+          cookieStore).set("agent_token", token, { httpOnly: true, secure: true, path: "/", maxAge: 60 * 60 * 24 * 7 });
+    (await cookieStore).set("agent_role", profile.user_role, { httpOnly: true, secure: true, path: "/", maxAge: 60 * 60 * 24 * 7 });
+    (await cookieStore).set("agent_id", userId, { httpOnly: true, secure: true, path: "/", maxAge: 60 * 60 * 24 * 7 });
+    (await cookieStore).set("agent_email", profile.email, { httpOnly: true, secure: true, path: "/", maxAge: 60 * 60 * 24 * 7 });
+    (await cookieStore).set("agent_name", profile.full_name, { httpOnly: true, secure: true, path: "/", maxAge: 60 * 60 * 24 * 7 });
 
     return NextResponse.json({ success: true, userId, role: profile.user_role });
   } catch (err) {
