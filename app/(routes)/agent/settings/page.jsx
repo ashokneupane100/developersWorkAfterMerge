@@ -1,18 +1,252 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/agentui/avatar"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/agentui/tabs"
-import { User, Mail, Phone, MapPin, Camera, Bell, Shield, Eye, Save, Download, Trash2 } from 'lucide-react'
+import { useEffect, useRef, useState } from "react";
+import { createClient } from "@/utils/supabase/client";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/agentui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/agentui/tabs";
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Camera,
+  Bell,
+  Shield,
+  Save,
+  Download,
+  Trash2,
+} from "lucide-react";
+
+import toast, { Toaster } from "react-hot-toast";
 
 export default function Settings() {
+  const supabase = createClient();
+
+  // UI state
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [debug, setDebug] = useState({ id: "", email: "" });
+
+  // Form state — only columns that exist in your profiles table
+  const [form, setForm] = useState({
+    full_name: "",
+    email: "",
+    phone: "",
+    full_address: "",
+    address: "",
+    avatar_url: "",
+    user_role: "",
+  });
+
+  // hidden file input for avatar change
+  const fileInputRef = useRef(null);
+
+  // Load current user + profile
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data: userRes, error: userErr } = await supabase.auth.getUser();
+        if (userErr) console.warn("[Settings] getUser error:", userErr.message);
+
+        const userId = userRes?.user?.id ?? "";
+        const email = userRes?.user?.email ?? "";
+        setDebug({ id: userId, email });
+
+        if (!userId && !email) {
+          setLoading(false);
+          toast.error("Not signed in.");
+          return;
+        }
+
+        // Prefer by PK id
+        let profile = null;
+        if (userId) {
+          const { data, error } = await supabase
+            .from("profiles")
+            .select(
+              "id, email, full_name, avatar_url, phone, full_address, address, user_role, updated_at"
+            )
+            .eq("id", userId)
+            .single();
+          if (!error && data) profile = data;
+        }
+
+        // Fallback by email
+        if (!profile && email) {
+          const { data, error } = await supabase
+            .from("profiles")
+            .select(
+              "id, email, full_name, avatar_url, phone, full_address, address, user_role, updated_at"
+            )
+            .eq("email", email)
+            .single();
+          if (!error && data) profile = data;
+        }
+
+        if (!profile) {
+          setForm((prev) => ({
+            ...prev,
+            email: email ?? "",
+            user_role: "Buyer",
+          }));
+        } else {
+          setForm({
+            full_name: profile.full_name ?? "",
+            email: profile.email ?? email ?? "",
+            phone: profile.phone ?? "",
+            full_address: profile.full_address ?? "",
+            address: profile.address ?? "",
+            avatar_url: profile.avatar_url ?? "",
+            user_role: profile.user_role ?? "Buyer",
+          });
+        }
+      } catch (e) {
+        console.error("[Settings] load fatal:", e);
+        toast.error("Failed to load profile.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [supabase]);
+
+  const onChange = (key) => (e) =>
+    setForm((p) => ({ ...p, [key]: e.target.value }));
+
+  const handleSave = async () => {
+    setSaving(true);
+    const dismiss = toast.loading("Saving profile…");
+    try {
+      const { data: userRes } = await supabase.auth.getUser();
+      const userId = userRes?.user?.id ?? "";
+      const email = userRes?.user?.email ?? "";
+
+      if (!userId && !email) {
+        toast.dismiss(dismiss);
+        toast.error("Not signed in.");
+        setSaving(false);
+        return;
+      }
+
+      const payload = {
+        full_name: form.full_name?.trim() || null,
+        phone: form.phone?.trim() || null,
+        full_address: form.full_address?.trim() || null,
+        address: form.address?.trim() || null,
+        avatar_url: form.avatar_url?.trim() || null,
+        updated_at: new Date().toISOString(),
+      };
+
+      // Update by PK
+      let { data, error } = await supabase
+        .from("profiles")
+        .update(payload)
+        .eq("id", userId)
+        .select()
+        .single();
+
+      // If no row, upsert
+      if (error && error.code === "PGRST116") {
+        const upsertPayload = {
+          id: userId,
+          user_id: userId,
+          email: email || form.email,
+          user_role: form.user_role || undefined,
+          ...payload,
+        };
+
+        const upsertRes = await supabase
+          .from("profiles")
+          .upsert(upsertPayload)
+          .select()
+          .single();
+
+        toast.dismiss(dismiss);
+
+        if (upsertRes.error) {
+          console.error("[Settings] upsert error:", upsertRes.error);
+          toast.error("Could not save profile.");
+        } else {
+          setForm((prev) => ({
+            ...prev,
+            email: upsertRes.data.email ?? prev.email,
+            avatar_url: upsertRes.data.avatar_url ?? prev.avatar_url,
+            user_role: upsertRes.data.user_role ?? prev.user_role,
+          }));
+          toast.success("Profile saved.");
+        }
+      } else if (error) {
+        toast.dismiss(dismiss);
+        console.error("[Settings] update error:", error);
+        toast.error("Could not save profile.");
+      } else {
+        toast.dismiss(dismiss);
+        toast.success("Profile saved.");
+      }
+    } catch (e) {
+      toast.dismiss(dismiss);
+      console.error("[Settings] save fatal:", e);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Open file picker
+  const handleChangePhoto = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // When a file is chosen → call API route
+  const onFileSelected = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const dismiss = toast.loading("Uploading avatar…");
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/profile/avatar", {
+        method: "POST",
+        body: formData,
+      });
+
+      const json = await res.json();
+      toast.dismiss(dismiss);
+
+      if (!res.ok) {
+        console.error("Upload error:", json?.error);
+        toast.error(json?.error || "Upload failed");
+        return;
+      }
+
+      // Update UI with new URL
+      setForm((prev) => ({ ...prev, avatar_url: json.url }));
+      toast.success("Avatar updated!");
+    } catch (err) {
+      toast.dismiss(dismiss);
+      console.error("Upload fatal:", err);
+      toast.error("Upload failed");
+    } finally {
+      // reset input so the same file can be re-selected later
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+      <Toaster position="top-right" />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
         <div>
@@ -20,18 +254,21 @@ export default function Settings() {
             Settings
           </h1>
           <p className="text-gray-600 mt-1">Manage your account and preferences</p>
+          <p className="text-xs text-gray-400 mt-1">
+            {loading ? "Loading…" : `Signed in as ${debug.email || "—"}`}
+          </p>
         </div>
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3 lg:w-[400px] h-12 bg-white shadow-sm">
           <TabsTrigger value="profile" className="h-10">Profile</TabsTrigger>
-          <TabsTrigger value="notifications" className="h-10">Notifications</TabsTrigger>
-          <TabsTrigger value="security" className="h-10">Security</TabsTrigger>
+          {/* If you want, re-enable other tabs */}
+          {/* <TabsTrigger value="notifications" className="h-10">Notifications</TabsTrigger>
+          <TabsTrigger value="security" className="h-10">Security</TabsTrigger> */}
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
-          {/* Profile Settings */}
           <Card className="gradient-card">
             <CardHeader>
               <CardTitle className="flex items-center text-xl">
@@ -40,282 +277,119 @@ export default function Settings() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Avatar */}
               <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6">
                 <Avatar className="h-24 w-24 border-4 border-white shadow-lg">
-                  <AvatarImage src="/placeholder.svg?height=96&width=96" />
+                  <AvatarImage src={form.avatar_url || "/placeholder.svg?height=96&width=96"} />
                   <AvatarFallback className="bg-gradient-to-br from-purple-500 to-purple-600 text-white text-2xl">
                     <User className="h-10 w-10" />
                   </AvatarFallback>
                 </Avatar>
                 <div className="text-center sm:text-left">
-                  <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={onFileSelected}
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleChangePhoto}
+                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
+                    disabled={loading}
+                  >
                     <Camera className="h-4 w-4 mr-2" />
                     Change Photo
                   </Button>
-                  <p className="text-sm text-gray-500 mt-2">JPG, GIF or PNG. Max size 2MB</p>
-                </div>
-              </div>
-              
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName" className="text-sm font-medium">First Name</Label>
-                  <Input 
-                    id="firstName" 
-                    defaultValue="John" 
-                    className="h-12 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName" className="text-sm font-medium">Last Name</Label>
-                  <Input 
-                    id="lastName" 
-                    defaultValue="Doe" 
-                    className="h-12 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                  />
+                  <p className="text-sm text-gray-500 mt-2">JPG, GIF, PNG (max 5MB)</p>
                 </div>
               </div>
 
+              {/* Full Name */}
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    defaultValue="john.doe@example.com" 
-                    className="pl-10 h-12 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="text-sm font-medium">Phone Number</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input 
-                    id="phone" 
-                    defaultValue="+977 9841234567" 
-                    className="pl-10 h-12 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="address" className="text-sm font-medium">Address</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input 
-                    id="address" 
-                    defaultValue="Kathmandu, Nepal" 
-                    className="pl-10 h-12 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="bio" className="text-sm font-medium">Bio</Label>
-                <Textarea 
-                  id="bio" 
-                  placeholder="Tell us about yourself and your real estate experience..."
-                  defaultValue="Experienced real estate agent with 5+ years in the Kathmandu valley market."
-                  className="min-h-[120px] bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                <Label htmlFor="full_name" className="text-sm font-medium">Full Name</Label>
+                <Input
+                  id="full_name"
+                  placeholder="Your full name"
+                  className="h-12 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                  value={form.full_name}
+                  onChange={onChange("full_name")}
+                  disabled={loading}
                 />
               </div>
 
-              <Button className="w-full sm:w-auto bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg h-12">
+              {/* Email (read-only) */}
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    id="email"
+                    type="email"
+                    className="pl-10 h-12 bg-gray-50 border-gray-200"
+                    value={form.email}
+                    disabled
+                  />
+                </div>
+              </div>
+
+              {/* Phone */}
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-sm font-medium">Phone Number</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    id="phone"
+                    placeholder="+977 98XXXXXXXX"
+                    className="pl-10 h-12 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                    value={form.phone}
+                    onChange={onChange("phone")}
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              {/* Address (sync to both columns) */}
+              <div className="space-y-2">
+                <Label htmlFor="address" className="text-sm font-medium">Address</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    id="address"
+                    placeholder="City, Area"
+                    className="pl-10 h-12 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                    value={form.full_address || form.address}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        full_address: e.target.value,
+                        address: e.target.value,
+                      }))
+                    }
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              {/* Role (read-only) */}
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">Role</Label>
+                <div className="text-sm text-gray-700">{form.user_role || "—"}</div>
+              </div>
+
+              <Button
+                className="w-full sm:w-auto bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg h-12"
+                onClick={handleSave}
+                disabled={loading || saving}
+              >
                 <Save className="h-4 w-4 mr-2" />
-                Save Profile Changes
+                {saving ? "Saving..." : "Save Profile Changes"}
               </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="notifications" className="space-y-6">
-          {/* Notification Settings */}
-          <Card className="gradient-card">
-            <CardHeader>
-              <CardTitle className="flex items-center text-xl">
-                <Bell className="h-5 w-5 mr-2 text-blue-600" />
-                Notification Preferences
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0 p-4 bg-blue-50 rounded-lg">
-                  <div className="space-y-1">
-                    <Label className="text-base font-medium">Email Notifications</Label>
-                    <p className="text-sm text-gray-600">
-                      Receive email updates about your listings and account activity
-                    </p>
-                  </div>
-                  <Switch defaultChecked className="data-[state=checked]:bg-blue-600" />
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0 p-4 bg-emerald-50 rounded-lg">
-                  <div className="space-y-1">
-                    <Label className="text-base font-medium">Listing Status Updates</Label>
-                    <p className="text-sm text-gray-600">
-                      Get notified when your listing status changes (approved, rejected, etc.)
-                    </p>
-                  </div>
-                  <Switch defaultChecked className="data-[state=checked]:bg-emerald-600" />
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0 p-4 bg-purple-50 rounded-lg">
-                  <div className="space-y-1">
-                    <Label className="text-base font-medium">New Inquiries</Label>
-                    <p className="text-sm text-gray-600">
-                      Receive notifications for new property inquiries from potential buyers
-                    </p>
-                  </div>
-                  <Switch defaultChecked className="data-[state=checked]:bg-purple-600" />
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0 p-4 bg-amber-50 rounded-lg">
-                  <div className="space-y-1">
-                    <Label className="text-base font-medium">Marketing Updates</Label>
-                    <p className="text-sm text-gray-600">
-                      Get tips and updates about real estate marketing and industry news
-                    </p>
-                  </div>
-                  <Switch className="data-[state=checked]:bg-amber-600" />
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0 p-4 bg-red-50 rounded-lg">
-                  <div className="space-y-1">
-                    <Label className="text-base font-medium">System Alerts</Label>
-                    <p className="text-sm text-gray-600">
-                      Important system notifications and maintenance updates
-                    </p>
-                  </div>
-                  <Switch defaultChecked className="data-[state=checked]:bg-red-600" />
-                </div>
-              </div>
-
-              <Button className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg h-12">
-                <Save className="h-4 w-4 mr-2" />
-                Save Notification Settings
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="security" className="space-y-6">
-          {/* Privacy & Security Settings */}
-          <Card className="gradient-card">
-            <CardHeader>
-              <CardTitle className="flex items-center text-xl">
-                <Shield className="h-5 w-5 mr-2 text-emerald-600" />
-                Privacy & Security
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0 p-4 bg-emerald-50 rounded-lg">
-                  <div className="space-y-1">
-                    <Label className="text-base font-medium">Profile Visibility</Label>
-                    <p className="text-sm text-gray-600">
-                      Make your profile visible to potential clients and other agents
-                    </p>
-                  </div>
-                  <Switch defaultChecked className="data-[state=checked]:bg-emerald-600" />
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0 p-4 bg-blue-50 rounded-lg">
-                  <div className="space-y-1">
-                    <Label className="text-base font-medium">Show Contact Information</Label>
-                    <p className="text-sm text-gray-600">
-                      Display your contact details on your public listings
-                    </p>
-                  </div>
-                  <Switch defaultChecked className="data-[state=checked]:bg-blue-600" />
-                </div>
-              </div>
-
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">Change Password</h3>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="currentPassword" className="text-sm font-medium">Current Password</Label>
-                    <Input 
-                      id="currentPassword" 
-                      type="password" 
-                      className="h-12 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="newPassword" className="text-sm font-medium">New Password</Label>
-                    <Input 
-                      id="newPassword" 
-                      type="password" 
-                      className="h-12 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword" className="text-sm font-medium">Confirm New Password</Label>
-                    <Input 
-                      id="confirmPassword" 
-                      type="password" 
-                      className="h-12 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <Button className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 shadow-lg h-12">
-                    <Shield className="h-4 w-4 mr-2" />
-                    Update Password
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Account Actions */}
-          <Card className="gradient-card">
-            <CardHeader>
-              <CardTitle className="text-xl">Account Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0 p-6 border-2 border-blue-200 rounded-lg bg-blue-50">
-                <div className="flex items-start space-x-4">
-                  <div className="p-3 bg-blue-100 rounded-full">
-                    <Download className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">Download Your Data</h4>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Export all your listings, account data, and activity history
-                    </p>
-                  </div>
-                </div>
-                <Button variant="outline" className="hover:bg-blue-100 hover:text-blue-700 hover:border-blue-300 h-12">
-                  <Download className="h-4 w-4 mr-2" />
-                  Download
-                </Button>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0 p-6 border-2 border-red-200 rounded-lg bg-red-50">
-                <div className="flex items-start space-x-4">
-                  <div className="p-3 bg-red-100 rounded-full">
-                    <Trash2 className="h-6 w-6 text-red-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-red-900">Delete Account</h4>
-                    <p className="text-sm text-red-700 mt-1">
-                      Permanently delete your account and all associated data
-                    </p>
-                  </div>
-                </div>
-                <Button variant="destructive" className="h-12 shadow-lg">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Account
-                </Button>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

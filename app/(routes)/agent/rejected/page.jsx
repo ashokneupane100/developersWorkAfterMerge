@@ -1,234 +1,316 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Home, Eye, Edit, MoreHorizontal, XCircle, RefreshCw, Search, Filter, AlertTriangle } from 'lucide-react'
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Home, Eye, Edit, MoreHorizontal, XCircle, RefreshCw, Search, Filter, AlertTriangle,
+} from "lucide-react";
+import Link from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 
 export default function RejectedListings() {
-  const rejectedListings = [
-    {
-      id: 1,
-      title: "Commercial Space in Pokhara",
-      location: "Pokhara, Nepal",
-      date: "6/26/2025",
-      price: "$120,000",
-      reason: "Incomplete documentation",
-      rejectedDays: 3,
-      canResubmit: true,
-      image: "/placeholder.svg?height=80&width=80"
-    },
-    {
-      id: 2,
-      title: "Old House in Kathmandu",
-      location: "Kathmandu, Nepal",
-      date: "6/22/2025",
-      price: "$85,000",
-      reason: "Property images unclear",
-      rejectedDays: 7,
-      canResubmit: true,
-      image: "/placeholder.svg?height=80&width=80"
-    }
-  ]
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [debug, setDebug] = useState({ email: "" });
+
+  useEffect(() => {
+    const run = async () => {
+      const supabase = createClient();
+      try {
+        const { data: userData, error: userErr } = await supabase.auth.getUser();
+        if (userErr) console.warn("[RejectedListings] getUser error:", userErr.message);
+        const email = userData?.user?.email || "";
+        setDebug({ email });
+
+        if (!email) {
+          setListings([]);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from("listing")
+          .select(`
+            id,
+            created_at,
+            full_address,
+            address,
+            "createdBy",
+            price,
+            views,
+            admin_status,
+            post_title,
+            "profileImage"
+          `)
+          .eq("createdBy", email)
+          .order("created_at", { ascending: false })
+          .limit(100);
+
+        console.log("📦 [RejectedListings] server response:", { data, error });
+
+        if (error) {
+          console.error("[RejectedListings] fetch error:", error);
+          setListings([]);
+          return;
+        }
+        setListings(data || []);
+      } catch (e) {
+        console.error("[RejectedListings] unexpected error:", e);
+        setListings([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    run();
+  }, []);
+
+  // helpers
+  const norm = (s) => (s ?? "").toString().trim().toLowerCase();
+  const fmtNrs = (p) => (typeof p === "number" ? `Nrs. ${p.toLocaleString("en-NP")}` : "—");
+  const fmtDate = (iso) =>
+    new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "numeric", day: "numeric" });
+  const daysSince = (iso) => {
+    if (!iso) return 0;
+    const ms = Date.now() - new Date(iso).getTime();
+    return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
+  };
+
+  // only rejected (case-insensitive)
+  const onlyRejected = useMemo(
+    () => (listings || []).filter((l) => norm(l.admin_status) === "rejected"),
+    [listings]
+  );
+
+  // attach derived fields
+  const rejectedWithMeta = useMemo(
+    () =>
+      onlyRejected.map((l) => ({
+        ...l,
+        rejectedDays: daysSince(l.created_at),
+      })),
+    [onlyRejected]
+  );
+
+  // search
+  const filtered = useMemo(() => {
+    const q = norm(search);
+    if (!q) return rejectedWithMeta;
+    return rejectedWithMeta.filter((l) => {
+      const title = norm(l.post_title);
+      const addr = norm(l.full_address || l.address);
+      return title.includes(q) || addr.includes(q);
+    });
+  }, [rejectedWithMeta, search]);
+
+  // stats
+  const totalRejected = filtered.length;
+  const avgRejectedDays =
+    totalRejected > 0
+      ? Math.round(filtered.reduce((s, l) => s + (l.rejectedDays || 0), 0) / totalRejected)
+      : 0;
+  const longestRejected = filtered.reduce((m, l) => Math.max(m, l.rejectedDays || 0), 0);
 
   return (
-    <div className="flex-1 space-y-6 p-4 md:p-8 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+    <div className="flex-1 space-y-6 p-4 md:p-8 bg-gradient-to-br from-slate-50 to-red-50 min-h-screen">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-transparent">
             Rejected Listings
           </h1>
           <p className="text-gray-600 mt-1">Properties that need revision before resubmission</p>
         </div>
-        <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg">
-          <Home className="h-4 w-4 mr-2" />
-          Add New Listing
+        <Button asChild className="h-11 px-5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow">
+          <Link href="/agent/new">
+            <Home className="h-4 w-4 mr-2" />
+            Add New Listing
+          </Link>
         </Button>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats */}
       <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-3">
-        <Card className="gradient-card border-l-4 border-l-red-500">
-          <CardContent className="p-6">
+        <Card className="rounded-2xl shadow-sm border-l-4 border-red-500">
+          <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Rejected</p>
-                <p className="text-3xl font-bold text-gray-900">{rejectedListings.length}</p>
-                <p className="text-xs text-red-600 mt-1">Need revision</p>
+                <p className="text-sm text-slate-600">Total Rejected</p>
+                <p className="text-3xl font-semibold text-slate-900">{loading ? "…" : totalRejected}</p>
+                <p className="text-xs text-red-600 mt-1">Needs revision</p>
               </div>
-              <div className="p-3 bg-red-100 rounded-full">
-                <XCircle className="h-6 w-6 text-red-600" />
+              <div className="p-3 bg-red-100 rounded-xl">
+                <XCircle className="h-6 w-6 text-red-700" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="gradient-card border-l-4 border-l-blue-500">
-          <CardContent className="p-6">
+        <Card className="rounded-2xl shadow-sm border-l-4 border-blue-500">
+          <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Can Resubmit</p>
-                <p className="text-3xl font-bold text-gray-900">{rejectedListings.filter(l => l.canResubmit).length}</p>
-                <p className="text-xs text-blue-600 mt-1">After fixing issues</p>
+                <p className="text-sm text-slate-600">Avg. Age</p>
+                <p className="text-3xl font-semibold text-slate-900">{loading ? "…" : avgRejectedDays}</p>
+                <p className="text-xs text-blue-600 mt-1">days since listed</p>
               </div>
-              <div className="p-3 bg-blue-100 rounded-full">
-                <RefreshCw className="h-6 w-6 text-blue-600" />
+              <div className="p-3 bg-blue-100 rounded-xl">
+                <RefreshCw className="h-6 w-6 text-blue-700" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="gradient-card border-l-4 border-l-emerald-500">
-          <CardContent className="p-6">
+        <Card className="rounded-2xl shadow-sm border-l-4 border-amber-500">
+          <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Success Rate</p>
-                <p className="text-3xl font-bold text-gray-900">92%</p>
-                <p className="text-xs text-emerald-600 mt-1">Overall approval</p>
+                <p className="text-sm text-slate-600">Longest Rejected</p>
+                <p className="text-3xl font-semibold text-slate-900">{loading ? "…" : longestRejected}</p>
+                <p className="text-xs text-amber-600 mt-1">days ago</p>
               </div>
-              <div className="p-3 bg-emerald-100 rounded-full">
-                <RefreshCw className="h-6 w-6 text-emerald-600" />
+              <div className="p-3 bg-amber-100 rounded-xl">
+                <AlertTriangle className="h-6 w-6 text-amber-700" />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search and Filter */}
-      <Card className="gradient-card">
+      {/* Search */}
+      <Card className="rounded-2xl shadow-sm">
         <CardContent className="p-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input 
-                placeholder="Search rejected listings..." 
-                className="pl-10 h-12 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
+              <Input
+                placeholder="Search rejected listings..."
+                className="pl-10 h-11 bg-white border-slate-200 focus:border-red-500 focus:ring-red-500"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <Button variant="outline" className="h-12 px-6 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 px-5 hover:bg-red-50 hover:text-red-700 hover:border-red-200"
+              onClick={() => setSearch("")}
+            >
               <Filter className="h-4 w-4 mr-2" />
-              Filter
+              Clear
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Rejected Listings */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1">
-        {rejectedListings.map((listing) => (
-          <Card key={listing.id} className="gradient-card hover:shadow-xl transition-all duration-300 overflow-hidden border-l-4 border-l-red-200">
-            <CardContent className="p-0">
-              <div className="flex flex-col sm:flex-row">
-                <div className="sm:w-32 h-48 sm:h-32 relative">
-                  <img 
-                    src={listing.image || "/placeholder.svg"} 
-                    alt={listing.title}
-                    className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-300"
-                  />
-                  <div className="absolute top-3 left-3">
-                    <Badge className="bg-red-500 text-white hover:bg-red-500 shadow-lg">
-                      rejected
-                    </Badge>
-                  </div>
-                  {listing.canResubmit && (
-                    <div className="absolute bottom-3 left-3 right-3">
-                      <div className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full text-center">
-                        Can Resubmit
+      {/* Rejected listings */}
+      <div className="grid gap-6">
+        {loading ? (
+          <Card className="rounded-2xl shadow-sm">
+            <CardContent className="p-6 text-slate-600">Loading rejected listings…</CardContent>
+          </Card>
+        ) : filtered.length === 0 ? (
+          <Card className="rounded-2xl shadow-sm">
+            <CardContent className="p-6 text-slate-600">
+              No rejected listings found for <b>{debug.email || "(no email)"}</b>.
+            </CardContent>
+          </Card>
+        ) : (
+          filtered.map((l) => {
+            const title = l.post_title || "Untitled Property";
+            const location = l.full_address || l.address || "—";
+            const image = l.profileImage || "/placeholder.svg?height=80&width=80";
+            const date = fmtDate(l.created_at);
+
+            return (
+              <Card key={l.id} className="rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden border-l-4 border-l-red-500">
+                <CardContent className="p-0">
+                  <div className="flex flex-col sm:flex-row">
+                    {/* Image + status */}
+                    <div className="sm:w-40 md:w-48 h-48 sm:h-auto relative">
+                      <img src={image} alt={title} className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-300" />
+                      <div className="absolute top-3 left-3">
+                        <Badge className="bg-red-600 text-white hover:bg-red-600 shadow-lg">rejected</Badge>
                       </div>
                     </div>
-                  )}
-                </div>
-                
-                <div className="flex-1 p-6">
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between space-y-4 sm:space-y-0">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        {listing.title}
-                      </h3>
-                      <p className="text-gray-600 mb-3 flex items-center">
-                        <span className="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
-                        {listing.location}
-                      </p>
-                      
-                      <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                        <div className="flex items-start space-x-2">
-                          <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
-                          <div>
-                            <p className="text-sm font-medium text-red-800">Rejection Reason</p>
-                            <p className="text-sm text-red-700 mt-1">{listing.reason}</p>
+
+                    {/* Content */}
+                    <div className="flex-1 p-5 md:p-6">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <h3 className="text-lg md:text-xl font-semibold text-slate-900 leading-snug line-clamp-2">
+                            {title}
+                          </h3>
+                          <p className="text-slate-600 mt-1 flex items-center gap-2">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-400" />
+                            <span className="truncate">{location}</span>
+                          </p>
+
+                          {/* Info pills */}
+                          <div className="mt-4 grid grid-cols-2 gap-3 max-w-2xl">
+                            <div className="rounded-xl bg-gray-50 px-4 py-3 text-center">
+                              <p className="text-xs text-slate-500">Rejected</p>
+                              <p className="text-sm font-semibold text-slate-800">{l.rejectedDays} days ago</p>
+                            </div>
+                            <div className="rounded-xl bg-red-50 px-4 py-3 text-center">
+                              <p className="text-xs text-slate-500">Listed</p>
+                              <p className="text-xs font-medium text-red-700">{date}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Price + actions */}
+                        <div className="flex items-start justify-between sm:flex-col sm:items-end sm:justify-start gap-3 shrink-0">
+                          <span className="text-2xl md:text-3xl font-bold text-slate-900 whitespace-nowrap">
+                            {fmtNrs(l.price)}
+                          </span>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline" className="hover:bg-blue-50 hover:text-blue-700">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="outline" className="hover:bg-emerald-50 hover:text-emerald-700">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button size="sm" variant="outline">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem>
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit Listing
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <RefreshCw className="h-4 w-4 mr-2" />
+                                  Resubmit
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </div>
                       </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="text-center p-3 bg-gray-50 rounded-lg">
-                          <p className="text-sm text-gray-600">Rejected</p>
-                          <p className="text-sm font-bold text-gray-800">{listing.rejectedDays} days ago</p>
-                        </div>
-                        <div className="text-center p-3 bg-blue-50 rounded-lg">
-                          <p className="text-sm text-gray-600">Status</p>
-                          <p className="text-sm font-bold text-blue-600">
-                            {listing.canResubmit ? "Can Resubmit" : "Under Review"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex flex-col items-end space-y-3">
-                      <span className="text-2xl font-bold text-gray-900">{listing.price}</span>
-                      <div className="flex flex-col space-y-2">
-                        <Button 
-                          size="sm" 
-                          className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
-                          disabled={!listing.canResubmit}
-                        >
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                          Resubmit
-                        </Button>
-                        <div className="flex space-x-2">
-                          <Button size="sm" variant="outline" className="hover:bg-blue-50 hover:text-blue-700">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="outline" className="hover:bg-emerald-50 hover:text-emerald-700">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button size="sm" variant="outline">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
-                                <Eye className="h-4 w-4 mr-2" />
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Edit & Resubmit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <RefreshCw className="h-4 w-4 mr-2" />
-                                Resubmit As Is
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
       </div>
     </div>
-  )
+  );
 }
