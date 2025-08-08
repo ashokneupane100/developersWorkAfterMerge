@@ -1,8 +1,8 @@
-"use client"
-import { useAuth } from "@/contexts/AuthContext"
-import { Building2, User, Edit, LogOut } from 'lucide-react'
-import Link from "next/link"
-import Image from "next/image"
+"use client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Building2, User, Edit, LogOut } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
 import {
   Card,
   CardBody,
@@ -13,29 +13,29 @@ import {
   Divider,
   Spinner,
   Avatar,
-} from "@heroui/react"
-import UserListing from "./_components/UserListing"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
+} from "@heroui/react";
+import UserListing from "./_components/UserListing";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 function UserProfile() {
-  const { user, profile, loading, signOut } = useAuth()
-  const isAuthenticated = !!user
-  const isLoading = loading
-  const router = useRouter()
-  const [activeTab, setActiveTab] = useState("my-listing")
+  const { user, profile, loading, signOut } = useAuth();
+  const isAuthenticated = !!user;
+  const isLoading = loading;
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState("my-listing");
 
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[200px]">
         <Spinner size="lg" color="primary" />
       </div>
-    )
+    );
   }
 
   if (!isAuthenticated) {
-    router.push("/login")
-    return null
+    router.push("/login");
+    return null;
   }
 
   return (
@@ -64,8 +64,12 @@ function UserProfile() {
               </div>
 
               <div className="flex-1 text-center sm:text-left">
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{user?.name}</h1>
-                <p className="text-gray-500 text-sm sm:text-base">{user?.email}</p>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                  {user?.name}
+                </h1>
+                <p className="text-gray-500 text-sm sm:text-base">
+                  {user?.email}
+                </p>
 
                 <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:gap-3">
                   <Link href="/edit-profile" className="flex-1 sm:flex-none">
@@ -78,6 +82,18 @@ function UserProfile() {
                       Edit Profile
                     </Button>
                   </Link>
+
+                  {profile?.user_role?.toLowerCase() === "agent" && (
+                    <Button
+                      onClick={() => router.push("/agent")}
+                      color="primary"
+                      size="sm"
+                      startContent={<Building2 className="h-4 w-4" />}
+                      className="w-full sm:w-auto"
+                    >
+                      Go to Dashboard
+                    </Button>
+                  )}
 
                   <Button
                     onClick={() => signOut({ callbackUrl: "/" })}
@@ -117,18 +133,30 @@ function UserProfile() {
                 <div className="p-3 sm:p-6">
                   <div className="space-y-4">
                     <div>
-                      <h3 className="text-base sm:text-lg font-medium mb-3">Account Information</h3>
+                      <h3 className="text-base sm:text-lg font-medium mb-3">
+                        Account Information
+                      </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div className="space-y-1">
-                          <label className="block text-xs sm:text-sm font-medium text-gray-500">Name</label>
-                          <div className="text-sm sm:text-base text-gray-900">{user?.name}</div>
+                          <label className="block text-xs sm:text-sm font-medium text-gray-500">
+                            Name
+                          </label>
+                          <div className="text-sm sm:text-base text-gray-900">
+                            {user?.name}
+                          </div>
                         </div>
                         <div className="space-y-1">
-                          <label className="block text-xs sm:text-sm font-medium text-gray-500">Email</label>
-                          <div className="text-sm sm:text-base text-gray-900 break-all">{user?.email}</div>
+                          <label className="block text-xs sm:text-sm font-medium text-gray-500">
+                            Email
+                          </label>
+                          <div className="text-sm sm:text-base text-gray-900 break-all">
+                            {user?.email}
+                          </div>
                         </div>
                         <div className="space-y-1">
-                          <label className="block text-xs sm:text-sm font-medium text-gray-500">Role</label>
+                          <label className="block text-xs sm:text-sm font-medium text-gray-500">
+                            Role
+                          </label>
                           <div>
                             <span
                               className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -148,7 +176,9 @@ function UserProfile() {
                           </div>
                         </div>
                         <div className="space-y-1">
-                          <label className="block text-xs sm:text-sm font-medium text-gray-500">Account Status</label>
+                          <label className="block text-xs sm:text-sm font-medium text-gray-500">
+                            Account Status
+                          </label>
                           <div>
                             <span
                               className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -157,7 +187,9 @@ function UserProfile() {
                                   : "bg-yellow-100 text-yellow-800"
                               }`}
                             >
-                              {profile?.email_verified ? "Verified" : "Unverified"}
+                              {profile?.email_verified
+                                ? "Verified"
+                                : "Unverified"}
                             </span>
                           </div>
                         </div>
@@ -184,7 +216,7 @@ function UserProfile() {
         </CardBody>
       </Card>
     </div>
-  )
+  );
 }
 
-export default UserProfile
+export default UserProfile;

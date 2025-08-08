@@ -2,10 +2,12 @@
 
 import * as React from "react"
 
-import type {
-  ToastActionElement,
-  ToastProps,
-} from "@/components/agentui/toast"
+// Define ToastProps locally if not exported from the module
+type ToastProps = {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  // Add other properties as needed
+}
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000
@@ -14,7 +16,7 @@ type ToasterToast = ToastProps & {
   id: string
   title?: React.ReactNode
   description?: React.ReactNode
-  action?: ToastActionElement
+  action?: React.ReactNode
 }
 
 const actionTypes = {

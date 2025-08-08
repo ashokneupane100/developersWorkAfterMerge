@@ -29,7 +29,7 @@ const PropertyCard = ({ item, toggleFavorite, favorites }) => {
             className="object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             onError={(e) => {
-              e.target.src = "/assets/images/placeholder-property.jpg";
+              e.target.src = "/assets/images/placeholder-property.png";
             }}
           />
 

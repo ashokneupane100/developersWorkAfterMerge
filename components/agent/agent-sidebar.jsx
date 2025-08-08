@@ -106,20 +106,56 @@ export default function AgentSidebar() {
 
     fetchAgent();
   }, []);
+//on logout clear all cookies and redirect to login
+
+  // const handleLogout = async () => {
+  //   const supabase = createClient();
+  //   await supabase.auth.signOut();
+
+  //   ["agent_token", "agent_role", "agent_id", "agent_email", "agent_name"].forEach((k) =>
+  //     Cookies.remove(k)
+  //   );
+
+  //   router.push("/login");
+  //   //set timeout to location reload
+  //   setTimeout(() => {
+  //     window.location.reload();
+  //   }, 2000);
+    
+  // };
+
 
   const handleLogout = async () => {
-    const supabase = createClient();
+  const supabase = createClient();
+
+  try {
     await supabase.auth.signOut();
+  } catch {}
 
-    ["agent_token", "agent_role", "agent_id", "agent_email", "agent_name"].forEach((k) =>
-      Cookies.remove(k)
-    );
+  // Best-effort client removal: must match how you set them (path/domain)
+  const opts = { path: "/" }; // add { domain: ".yourdomain.com" } in prod if you set it that way
+  ["agent_token","agent_role","agent_id","agent_email","agent_name"].forEach((k) =>
+    Cookies.remove(k, opts)
+  );
 
-    router.push("/login/agent");
-  };
+  // Clear any Supabase localStorage artifacts
+  try {
+    Object.keys(localStorage).forEach((k) => {
+      if (k.startsWith("sb-")) localStorage.removeItem(k);
+    });
+  } catch {}
+
+  // Authoritative server-side clear (for HttpOnly cookies)
+  await fetch("/api/auth/logout", { method: "POST", cache: "no-store" });
+
+  // Navigate & hard refresh so middleware sees cleared cookies immediately
+  router.replace("/login");
+  window.location.replace("/login");
+};
+
 
   return (
-    <Sidebar className="border-r-0">
+    <Sidebar className="border-r-0 bg-white md:bg-sidebar md:text-sidebar-foreground">
       <SidebarHeader className="p-6 bg-gradient-to-r from-blue-600 to-blue-700">
         <Button
           variant="ghost"
@@ -159,7 +195,7 @@ export default function AgentSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-4 py-6">
+     <SidebarContent className="px-4 py-6 bg-white">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
@@ -182,7 +218,7 @@ export default function AgentSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t bg-gradient-to-r from-red-50 to-red-100">
+      <SidebarFooter className="p-4 border-t bg-white md:bg-gradient-to-r md:from-red-50 md:to-red-100">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="h-12 rounded-xl hover:bg-red-100">
