@@ -58,19 +58,23 @@ export async function POST(request) {
           firstName,
           lastName,
         },
-        // IMPORTANT: Disable Supabase's email confirmation
-        emailRedirectTo: null,
-        emailConfirm: false,
+        // // IMPORTANT: Disable Supabase's email confirmation
+        // emailRedirectTo: null,
+        // emailConfirm: false,
       },
     });
 
     if (error) {
-      console.error("Supabase signup error:", error);
+      console.error("Supabase signup error (raw):", error);
+      console.error(
+        "Supabase signup error JSON:",
+        JSON.stringify(error, Object.getOwnPropertyNames(error))
+      );
       return NextResponse.json(
         {
           success: false,
-          message: error.message,
-          details: JSON.stringify(error),
+          message: error.message ?? "Signup failed",
+          details: JSON.stringify(error, Object.getOwnPropertyNames(error)),
         },
         { status: 400 }
       );
