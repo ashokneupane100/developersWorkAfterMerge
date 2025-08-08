@@ -11,7 +11,7 @@ For selling properties (houses, land, or shops), match based on similar price ra
 
 # once a person does property request form, send SMS by Sparrow SMS, related properties and related nearby address. That's it for now.
 
-
+*just for deployment *
 Future Growth 
 As the startup grows, additional features and specifications will be introduced. For the time and effort needed for the project, you will be very nicely paid to make you happy ! 
 Happy Coding From onlinehome.com.np Management 🤩🤩
