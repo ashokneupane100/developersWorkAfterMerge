@@ -8,7 +8,7 @@ All modifications should be coordinated and approved to avoid conflicts or unint
 
 🔒 **Branch Status:** Protected  
 👤 **Branch Owner:** Sangit Pokhrel
-📌 **Instruction:** _No changes allowed without approval_Just little change for deploy
+📌 **Instruction:** _No changes allowed without approval_
 
 
 
