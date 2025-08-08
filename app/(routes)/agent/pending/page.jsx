@@ -141,12 +141,7 @@ export default function PendingListings() {
           </h1>
           <p className="text-gray-600 mt-1">Properties currently under review</p>
         </div>
-        <Button asChild className="h-11 px-5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow">
-          <Link href="/agent/new">
-            <Home className="h-4 w-4 mr-2" />
-            Add New Listing
-          </Link>
-        </Button>
+     
       </div>
 
       {/* Stats */}

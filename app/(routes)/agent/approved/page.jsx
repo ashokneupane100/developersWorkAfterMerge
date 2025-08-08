@@ -115,12 +115,7 @@ export default function ApprovedListings() {
           </h1>
           <p className="text-gray-600 mt-1">Your successfully approved properties</p>
         </div>
-        <Button asChild className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg">
-          <Link href="/agent/new">
-            <Home className="h-4 w-4 mr-2" />
-            Add New Listing
-          </Link>
-        </Button>
+        
       </div>
 
       {/* Stats */}
