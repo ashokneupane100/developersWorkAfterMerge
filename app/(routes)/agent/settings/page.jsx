@@ -351,26 +351,52 @@ export default function Settings() {
               </div>
 
               {/* Address (sync to both columns) */}
-              <div className="space-y-2">
-                <Label htmlFor="address" className="text-sm font-medium">Address</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    id="address"
-                    placeholder="City, Area"
-                    className="pl-10 h-12 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                    value={form.full_address || form.address}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        full_address: e.target.value,
-                        address: e.target.value,
-                      }))
-                    }
-                    disabled={loading}
-                  />
-                </div>
-              </div>
+             {/* Full Address */}
+<div className="space-y-2">
+  <Label htmlFor="full_address" className="text-sm font-medium">
+    Full Address
+  </Label>
+  <div className="relative">
+    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+    <Input
+      id="full_address"
+      placeholder="House No, Street, City"
+      className="pl-10 h-12 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+      value={form.full_address}
+      onChange={(e) =>
+        setForm((prev) => ({
+          ...prev,
+          full_address: e.target.value,
+        }))
+      }
+      disabled={loading}
+    />
+  </div>
+</div>
+
+{/* Address (Place name only) */}
+<div className="space-y-2">
+  <Label htmlFor="address" className="text-sm font-medium">
+    Address (Place Name)
+  </Label>
+  <div className="relative">
+    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+    <Input
+      id="address"
+      placeholder="e.g., New Baneshwor, Maitidevi"
+      className="pl-10 h-12 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+      value={form.address}
+      onChange={(e) =>
+        setForm((prev) => ({
+          ...prev,
+          address: e.target.value,
+        }))
+      }
+      disabled={loading}
+    />
+  </div>
+</div>
+
 
               {/* Role (read-only) */}
               <div className="space-y-1">
