@@ -47,7 +47,10 @@ export async function POST(request: Request) {
     (await cookieStore).set("agent_id", userId, { httpOnly: true, secure: true, path: "/", maxAge: 60 * 60 * 24 * 7 });
     (await cookieStore).set("agent_email", profile.email, { httpOnly: true, secure: true, path: "/", maxAge: 60 * 60 * 24 * 7 });
     (await cookieStore).set("agent_name", profile.full_name, { httpOnly: true, secure: true, path: "/", maxAge: 60 * 60 * 24 * 7 });
+    
 
+    
+    
     return NextResponse.json({ success: true, userId, role: profile.user_role });
   } catch (err) {
     console.error("Login error:", err);

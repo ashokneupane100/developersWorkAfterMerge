@@ -1,38 +1,20 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Cookies from "js-cookie";
 import { createClient } from "@/utils/supabase/client";
 import {
-  BarChart3,
-  CheckCircle,
-  Clock,
-  XCircle,
-  Settings,
-  LogOut,
-  Home,
-  ArrowLeft,
+  BarChart3, CheckCircle, Clock, XCircle, Settings, LogOut, Home, ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
+  Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
+  SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
 } from "@/components/agentui/sidebar";
 import { Button } from "@/components/ui/button";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/agentui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/agentui/avatar";
 
 const menuItems = [
   { title: "Overview", url: "/agent", icon: BarChart3 },
@@ -44,54 +26,97 @@ const menuItems = [
 
 export default function AgentSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
   const [agent, setAgent] = useState({
     full_name: "",
     user_role: "",
     email: "",
+    avatar_url: "",
   });
+  const [loading, setLoading] = useState(true);
 
-  const router = useRouter();
-
-  const handleLogout = () => {
-    // Clear all related cookies
-    Cookies.remove("agent_token");
-    Cookies.remove("agent_role");
-    Cookies.remove("agent_id");
-    Cookies.remove("agent_email");
-    Cookies.remove("agent_name");
-    Cookies.clear();
-    // Redirect to login
-    router.push("/login/agent");
-  };
   useEffect(() => {
     const fetchAgent = async () => {
       const supabase = createClient();
-      const userId = Cookies.get("agent_id");
 
-      if (!userId) return;
+      try {
+        // 1) Resolve userId: prefer cookie, else current auth user
+        let userId = Cookies.get("agent_id");
+        if (!userId) {
+          const { data, error } = await supabase.auth.getUser();
+          if (error) console.warn("auth.getUser error:", error.message);
+          userId = data?.user?.id || null;
+        }
 
-      // const { data: profile, error: profileError } = await supabase
-      //   .from("profiles")
-      //   .select("user_role, full_name, email")// userId = auth.user.id
-      //   .eq("user_id", userId)
-      //   .single();
+        console.log("[Sidebar] Resolved agent_id:", userId);
 
-      const { data: profile, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", auth.user.id)
-        .single();
+        if (!userId) {
+          console.warn("[Sidebar] No agent_id found in cookies or auth session.");
+          return;
+        }
 
-      if (profileError) {
-        console.error("Failed to fetch agent profile:", profileError.message);
-        return;
+        // 2) Fetch full profile for that id
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select(`
+            id,
+            user_id,
+            full_name,
+            email,
+            avatar_url,
+            user_role,
+            email_verified,
+            password_updated_at,
+            latitude,
+            longitude,
+            location_updated_at,
+            location_permission,
+            full_address,
+            address,
+            phone,
+            is_number_verified,
+            created_at,
+            updated_at,
+            auth_provider
+          `)
+          .eq("id", userId) // if your PK is user_id, switch to .eq("user_id", userId)
+          .single();
+
+        if (profileError) {
+          console.error("[Sidebar] Profile fetch error:", profileError.message);
+          return;
+        }
+
+        console.log("[Sidebar] Full profile fetched:", profile);
+
+        // 3) Hydrate UI
+        setAgent({
+          full_name: profile.full_name || "",
+          user_role: profile.user_role || "",
+          email: profile.email || "",
+          avatar_url: profile.avatar_url || "",
+        });
+      } catch (err) {
+        console.error("[Sidebar] Unexpected error:", err);
+      } finally {
+        setLoading(false);
       }
-
-      setAgent(data);
     };
 
     fetchAgent();
   }, []);
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+
+    ["agent_token", "agent_role", "agent_id", "agent_email", "agent_name"].forEach((k) =>
+      Cookies.remove(k)
+    );
+
+    router.push("/login/agent");
+  };
 
   return (
     <Sidebar className="border-r-0">
@@ -100,10 +125,12 @@ export default function AgentSidebar() {
           variant="ghost"
           size="sm"
           className="justify-start mb-4 text-white hover:bg-white/20 border-white/20"
+          onClick={() => router.push("/")}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Return to Main Site
         </Button>
+
         <div className="flex items-center space-x-3">
           <div className="p-2 bg-white/20 rounded-lg">
             <Home className="h-6 w-6 text-white" />
@@ -113,19 +140,20 @@ export default function AgentSidebar() {
             <p className="text-blue-100 text-sm">Real Estate Dashboard</p>
           </div>
         </div>
+
         <div className="flex items-center space-x-3 mt-4 p-3 bg-white/10 rounded-lg">
           <Avatar className="h-10 w-10">
-            <AvatarImage src="/placeholder.svg?height=40&width=40" />
+            <AvatarImage src={agent.avatar_url || "/placeholder.svg"} />
             <AvatarFallback className="bg-white/20 text-white">
-              {agent.full_name ? agent.full_name.charAt(0) : "A"}
+              {(agent.full_name || agent.email || "A").charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div>
             <p className="text-white font-medium">
-              {agent.full_name || "Agent"}
+              {loading ? "Loading…" : agent.full_name || "Agent"}
             </p>
             <p className="text-blue-100 text-xs">
-              {agent.user_role || "Loading..."}
+              {loading ? "" : agent.user_role || "—"}
             </p>
           </div>
         </div>
@@ -157,10 +185,7 @@ export default function AgentSidebar() {
       <SidebarFooter className="p-4 border-t bg-gradient-to-r from-red-50 to-red-100">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="h-12 rounded-xl hover:bg-red-100"
-            >
+            <SidebarMenuButton asChild className="h-12 rounded-xl hover:bg-red-100">
               <button
                 className="w-full flex items-center text-red-600 hover:text-red-700 font-medium"
                 onClick={handleLogout}
