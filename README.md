@@ -17,3 +17,5 @@ This is the production level code lab of next.js realEstate project where you ca
 
 # supabaseAuthWithoutForgetPassword
 # developersWorkAfterMerge
+
+#some change for the vercel deploy...
