@@ -11,7 +11,7 @@ const PropertyCard = ({ item, toggleFavorite, favorites }) => {
 
   // Safely handle image URL
   const imageUrl =
-    item?.listingImages?.[0]?.url || "/assets/images/placeholder-property.jpg";
+    item?.listingImages?.[0]?.url || "/assets/images/placeholder.svg";
 
   // Safely handle location
   const location =

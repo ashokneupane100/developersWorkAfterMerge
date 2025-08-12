@@ -3,7 +3,7 @@ import type React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Users, Home, FileText, BarChart3, Settings, LogOut, ChevronLeft, List } from "lucide-react"
-
+import { Zap } from "lucide-react"
 const Sidebar: React.FC = () => {
   const pathname = usePathname()
 
@@ -134,6 +134,21 @@ const Sidebar: React.FC = () => {
 
         {/* Logout button */}
         <div className="px-4 py-6 mt-auto border-t border-gray-200">
+          <Link
+  href="/admin/match"
+  className={`group flex items-center px-3 py-3 text-sm font-medium rounded-lg ${
+    isActive("/admin/match")
+      ? "bg-indigo-50 text-indigo-700"
+      : "text-gray-900 hover:bg-indigo-50 hover:text-indigo-700"
+  } transition-colors`}
+>
+  <Zap
+    className={`mr-3 h-5 w-5 ${
+      isActive("/admin/match") ? "text-indigo-500" : "text-gray-500 group-hover:text-indigo-500"
+    }`}
+  />
+  Run Matching
+</Link>
           <button className="group flex items-center px-3 py-3 text-sm font-medium rounded-lg text-gray-900 hover:bg-red-50 hover:text-red-700 transition-colors w-full">
             <LogOut className="mr-3 h-5 w-5 text-gray-500 group-hover:text-red-500" />
             Logout
