@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import Header from "./_components/Header";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { HeroUIProvider } from "@heroui/react";
-
+import ChatwootWidget from "./_components/chatwoot/ChatwootWidget";
 
 const inter = Outfit({ subsets: ["latin"] });
 
@@ -22,6 +22,7 @@ export default function RootLayout({ children }) {
               <Provider>
                 <Toaster />
                 {children}
+                <ChatwootWidget />
               </Provider>
             </HeroUIProvider>
         </AuthProvider>
