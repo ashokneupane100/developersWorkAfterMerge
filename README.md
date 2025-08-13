@@ -1,4 +1,4 @@
-## 🚫 Branch Ownership Notice
+## 🚫 Branch Ownership Notices
 
 > **This branch is owned by: `Sangit Pokhrel`**
 
